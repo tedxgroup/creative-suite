@@ -198,7 +198,7 @@ export function AddClipDialog({
                 </div>
               </div>
             ) : generatedPrompt ? (
-              <div className="grid grid-cols-[180px_1fr] gap-4">
+              <div className="grid grid-cols-[180px_1fr] items-start gap-4">
                 <div className="grid gap-2">
                   <Label>Imagem</Label>
                   <UploadArea
@@ -237,7 +237,7 @@ export function AddClipDialog({
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-[180px_1fr] gap-4">
+              <div className="grid grid-cols-[180px_1fr] items-start gap-4">
                 <div className="grid gap-2">
                   <Label>Imagem (opcional)</Label>
                   <UploadArea
