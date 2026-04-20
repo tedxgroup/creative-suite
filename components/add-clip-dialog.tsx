@@ -68,18 +68,26 @@ export function AddClipDialog({
     const fd = new FormData()
     fd.append("image", file)
     const res = await fetch("/api/upload", { method: "POST", body: fd })
-    const data = await res.json()
-    if (data.url) setImageUrl(data.url)
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || !data.url) {
+      console.error("[upload-image]", res.status, data)
+      toast.error(data.error || `Falha no upload (${res.status})`)
+      throw new Error(data.error || `Upload failed (${res.status})`)
+    }
+    setImageUrl(data.url)
   }
   async function uploadAudio(file: File) {
     const fd = new FormData()
     fd.append("audio", file)
     const res = await fetch("/api/upload", { method: "POST", body: fd })
-    const data = await res.json()
-    if (data.url) {
-      setAudioUrl(data.url)
-      setAudioName(file.name)
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || !data.url) {
+      console.error("[upload-audio]", res.status, data)
+      toast.error(data.error || `Falha no upload (${res.status})`)
+      throw new Error(data.error || `Upload failed (${res.status})`)
     }
+    setAudioUrl(data.url)
+    setAudioName(file.name)
   }
 
   async function analyzeWithAI() {
@@ -357,8 +365,11 @@ function UploadArea({
     setUploading(true)
     try {
       await onFile(file)
+    } catch {
+      // onFile already toasts on failure
     } finally {
       setUploading(false)
+      if (inputRef.current) inputRef.current.value = ""
     }
   }
 
@@ -394,6 +405,10 @@ function UploadArea({
           src={url}
           alt=""
           className="animate-in fade-in zoom-in-95 size-full object-cover duration-500"
+          onError={() => {
+            console.error("[img-load-error]", url)
+            toast.error("Imagem não pôde ser carregada")
+          }}
         />
       ) : url ? (
         <div className="animate-in fade-in zoom-in-95 flex flex-col items-center gap-1.5 duration-300">

@@ -73,10 +73,19 @@ export function BulkScenesDialog({
       const fd = new FormData()
       fd.append("image", file)
       const res = await fetch("/api/upload", { method: "POST", body: fd })
-      const data = await res.json()
-      if (data.url) setImageUrl(data.url)
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.url) {
+        console.error("[upload]", res.status, data)
+        toast.error(data.error || `Falha no upload (${res.status})`)
+        return
+      }
+      setImageUrl(data.url)
+    } catch (err: any) {
+      console.error("[upload]", err)
+      toast.error(err.message || "Erro no upload")
     } finally {
       setUploadingImage(false)
+      if (inputRef.current) inputRef.current.value = ""
     }
   }
 
@@ -269,6 +278,11 @@ export function BulkScenesDialog({
                       src={imageUrl}
                       alt=""
                       className="animate-in fade-in zoom-in-95 size-full object-cover duration-500"
+                      onError={() => {
+                        console.error("[img-load-error]", imageUrl)
+                        toast.error("Imagem não pôde ser carregada")
+                        setImageUrl(null)
+                      }}
                     />
                   ) : (
                     <>
