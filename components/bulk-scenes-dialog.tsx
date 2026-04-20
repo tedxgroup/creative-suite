@@ -25,6 +25,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { api } from "@/lib/api"
+import { uploadDirect } from "@/lib/uploadDirect"
 import { cn } from "@/lib/utils"
 import type { VideoProject } from "@/lib/types"
 
@@ -70,16 +71,8 @@ export function BulkScenesDialog({
     if (!file) return
     setUploadingImage(true)
     try {
-      const fd = new FormData()
-      fd.append("image", file)
-      const res = await fetch("/api/upload", { method: "POST", body: fd })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok || !data.url) {
-        console.error("[upload]", res.status, data)
-        toast.error(data.error || `Falha no upload (${res.status})`)
-        return
-      }
-      setImageUrl(data.url)
+      const { url } = await uploadDirect(file, "image")
+      setImageUrl(url)
     } catch (err: any) {
       console.error("[upload]", err)
       toast.error(err.message || "Erro no upload")

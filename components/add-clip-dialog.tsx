@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { api } from "@/lib/api"
+import { uploadDirect } from "@/lib/uploadDirect"
 import { cn } from "@/lib/utils"
 import type { VideoClip } from "@/lib/types"
 
@@ -65,29 +66,25 @@ export function AddClipDialog({
   }, [open])
 
   async function uploadImage(file: File) {
-    const fd = new FormData()
-    fd.append("image", file)
-    const res = await fetch("/api/upload", { method: "POST", body: fd })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok || !data.url) {
-      console.error("[upload-image]", res.status, data)
-      toast.error(data.error || `Falha no upload (${res.status})`)
-      throw new Error(data.error || `Upload failed (${res.status})`)
+    try {
+      const { url } = await uploadDirect(file, "image")
+      setImageUrl(url)
+    } catch (err: any) {
+      console.error("[upload-image]", err)
+      toast.error(err.message || "Erro no upload da imagem")
+      throw err
     }
-    setImageUrl(data.url)
   }
   async function uploadAudio(file: File) {
-    const fd = new FormData()
-    fd.append("audio", file)
-    const res = await fetch("/api/upload", { method: "POST", body: fd })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok || !data.url) {
-      console.error("[upload-audio]", res.status, data)
-      toast.error(data.error || `Falha no upload (${res.status})`)
-      throw new Error(data.error || `Upload failed (${res.status})`)
+    try {
+      const { url } = await uploadDirect(file, "audio")
+      setAudioUrl(url)
+      setAudioName(file.name)
+    } catch (err: any) {
+      console.error("[upload-audio]", err)
+      toast.error(err.message || "Erro no upload do áudio")
+      throw err
     }
-    setAudioUrl(data.url)
-    setAudioName(file.name)
   }
 
   async function analyzeWithAI() {
