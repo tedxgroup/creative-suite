@@ -275,8 +275,7 @@ export function BulkScenesDialog({
                   value={script}
                   onChange={(e) => setScript(e.target.value)}
                   placeholder="Cole aqui o script. O Claude vai dividir em cenas com prompts otimizados..."
-                  rows={6}
-                  className="resize-none text-[12px] leading-relaxed"
+                  className="h-[280px] max-h-[280px] resize-none overflow-y-auto text-[12px] leading-relaxed [field-sizing:fixed]"
                 />
               </div>
             </div>

@@ -139,7 +139,7 @@ export function AddClipDialog({
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="O que o avatar fala ou faz neste clip..."
-                  rows={5}
+                  className="h-[160px] max-h-[160px] resize-none overflow-y-auto [field-sizing:fixed]"
                   autoFocus
                 />
               </div>
