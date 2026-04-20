@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { fetchClip, updateClip, createClip, loadProject } from "@/lib/db"
+import { updateClip, createClip, loadProject } from "@/lib/db"
 import { callAIWithFallback } from "@/lib/ai"
 import { prepareImage } from "@/lib/imageHelpers"
 import { ANTHROPIC_API_KEY, OPENAI_API_KEY } from "@/lib/env"
@@ -9,6 +9,17 @@ export const maxDuration = 120
 
 interface Params {
   params: Promise<{ id: string; clipId: string }>
+}
+
+// Safety net: guarantee the subtitle blocker is present at the end of every prompt.
+function enforceTextBlocker(prompt: string): string {
+  const trimmed = (prompt || "").trim()
+  if (/\(no subtitles,\s*no text overlay\)\s*$/i.test(trimmed)) return trimmed
+  const cleaned = trimmed.replace(
+    /\(?\s*no\s+subtitles[^)]*\)?\s*$/i,
+    ""
+  ).trim()
+  return `${cleaned} (no subtitles, no text overlay)`
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
@@ -41,34 +52,32 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   try {
     const imageBase64 = await prepareImage(clip.imageUrl)
-    const promptText = `You are refining a VEO 3.1 video prompt for an 8-second image-to-video clip.
-
-The prompt MUST use the VEO 3.1 OFFICIAL SCHEMA — only 6 keys, processed as independent computational axes:
-
-{
-  "camera": "",
-  "description": "",
-  "motion": "",
-  "audio": "",
-  "text": "none, no subtitles, no text overlay, no on-screen text, no watermarks, no logos",
-  "ending": ""
-}
+    const promptText = `You are refining a VEO 3.1 prompt for an 8-second image-to-video clip.
 
 ═══════════════════════════════════════════════
-FIELD RULES
+CRITICAL RULES
 ═══════════════════════════════════════════════
 
-• camera — shot type + framing + orientation (e.g. "Static shot, fixed camera, vertical 9:16, medium shot, shallow depth of field")
+1. DO NOT DESCRIBE APPEARANCE (clothes, hair, skin, face, setting). The I2V image already provides those pixels — describing them wastes tokens and disperses the model's attention.
 
-• description — body mechanics + environment TOGETHER. DO NOT describe subject appearance (the I2V image provides it). Use concrete mechanical verbs with measurements (cm, degrees, directions). Convert emotions into facial/body mechanics (e.g. "urgent" → "brow furrows, jaw tightens, leans forward 5cm"). Include locks like "eyes remain locked on the camera lens throughout the entire clip" or "he holds the phone steady in his right hand throughout the entire clip". End with environment/lighting detail.
+2. FRONT-LOAD THE CAMERA. The prompt must START with camera behavior. Default: "Static shot, fixed camera, vertical 9:16" unless the scene requires motion.
 
-• motion — ambient physics ONLY (fluids, particles, breathing, steam, micro-movements) — separate from subject action.
+3. CONCRETE MECHANICAL VERBS, NEVER EMOTIONAL ONES. Convert emotions into body/face mechanics with measurements. "Urgent" → "brow furrows, leans 5cm forward, jaw tightens." "Confident" → "chest rises, shoulders square, chin lifts 3 degrees."
 
-• audio — voice + SFX. DIALOGUE goes HERE. NEVER use quotes around speech (triggers subtitles). Use a COLON: "[voice description + pacing]: [the actual words]". CRITICAL: never invent, extend, or pad the dialogue — only use words the user wrote (in the current dialogue or their explicit chat request). SPELL OUT NUMBERS as the ONLY allowed transformation ("86" → "eighty six", "97%" → "ninety seven percent"). End with "No background music" or "No background music, no sound effects". For silent scenes: "No voice, no speech, no music. Soft ambient [specific sound]".
+4. DIALOGUE WITH A COLON, NO QUOTES. Quotation marks activate the text decoder and burn subtitles onto the video. Example: "He speaks clearly: the bacterium that eats your insulin…"
 
-• text — ALWAYS exactly: "none, no subtitles, no text overlay, no on-screen text, no watermarks, no logos"
+5. EVERY PROMPT MUST END WITH: (no subtitles, no text overlay). The model MUST NOT generate captions, on-screen text, watermarks, or any overlays. This is non-negotiable.
 
-• ending — final frame state (body position + object state). Vital for continuity between clips.
+6. 100-150 WORDS.
+
+7. AUDIO BLOCK LAST, separated from visuals. Voice tone + pacing + ambient sound at the end.
+
+8. NEVER INVENT OR EXTEND DIALOGUE. Use only the words the user explicitly wrote (either in the current dialogue or in their chat request below). The ONLY allowed transformation is spelling numerals out ("86" → "eighty six").
+
+═══════════════════════════════════════════════
+STRUCTURE
+═══════════════════════════════════════════════
+[CAMERA] + [BODY MECHANICS] + [OBJECT INTERACTION] + [ENVIRONMENT] + [DIALOGUE with colon] + [AUDIO / VOICE] + (no subtitles, no text overlay)
 
 ═══════════════════════════════════════════════
 CURRENT STATE
@@ -87,29 +96,24 @@ ${message}
 RULES FOR THE EDIT
 ═══════════════════════════════════════════════
 
-• Keep the 6-key schema exactly — update only the fields the user asked to change
-• If the dialogue in "audio" exceeds ~25 words (>8 seconds), you MUST split into two scenes (use newScene)
-• If the user's request is about emotion, translate it into mechanical facial/body changes in "description"
-• If the user asks about the spoken line, update it ONLY inside "audio" (after the colon, no quotes, numbers spelled out) — and ONLY with words the user explicitly provided; never invent or extend dialogue on your own
-• Preserve the "text" field verbatim
+• Preserve the prose structure and length (100-150 words).
+• Change ONLY what the user asked. Do not rewrite untouched details.
+• If the user's request is about emotion, translate it into mechanical facial/body movements.
+• If the spoken dialogue exceeds ~25 words (>8 seconds at normal pace), split into two scenes (use newScene for the overflow).
+• If the user asks about the spoken line, update it ONLY with words they provided — never invent filler.
+• Always end with (no subtitles, no text overlay).
 
 ═══════════════════════════════════════════════
 OUTPUT FORMAT
 ═══════════════════════════════════════════════
 
-Return ONLY a JSON object (no markdown, no explanation):
+Return ONLY a JSON object — no markdown, no explanation:
+
 {
-  "prompt": {
-    "camera": "...",
-    "description": "...",
-    "motion": "...",
-    "audio": "...",
-    "text": "none, no subtitles, no text overlay, no on-screen text, no watermarks, no logos",
-    "ending": "..."
-  },
-  "dialogue": "the scene's spoken words in plain text (must match what appears after the colon in prompt.audio)",
+  "prompt": "the full prose prompt as ONE string, starting with the camera and ending with (no subtitles, no text overlay)",
+  "dialogue": "the scene's spoken words in plain text (must match what appears after the colon in prompt)",
   "newScene": null | {
-    "prompt": { ...same 6-key schema... },
+    "prompt": "...",
     "dialogue": "overflow spoken words"
   }
 }`
@@ -152,34 +156,14 @@ Return ONLY a JSON object (no markdown, no explanation):
       )
     }
 
-    // Normalize to the 6-key VEO schema + force the text blocker verbatim
-    const TEXT_BLOCKER =
-      "none, no subtitles, no text overlay, no on-screen text, no watermarks, no logos"
-
-    const toStr = (p: unknown) => {
-      let obj: any = p
-      if (typeof p === "string") {
-        try {
-          obj = JSON.parse(p)
-        } catch {
-          return p
-        }
-      }
-      if (!obj || typeof obj !== "object") return ""
-      const normalized = {
-        camera: obj.camera || "",
-        description: obj.description || "",
-        motion: obj.motion || "",
-        audio: obj.audio || "",
-        text: TEXT_BLOCKER,
-        ending: obj.ending || "",
-      }
-      return JSON.stringify(normalized, null, 2)
+    const toPrompt = (p: unknown): string => {
+      const s = typeof p === "string" ? p : JSON.stringify(p)
+      return enforceTextBlocker(s)
     }
 
     // Update current clip
     const updatedClip = await updateClip(clipId, {
-      prompt: toStr(result.prompt),
+      prompt: toPrompt(result.prompt),
       dialogue: result.dialogue,
       status: "pending",
       taskId: null,
@@ -199,7 +183,7 @@ Return ONLY a JSON object (no markdown, no explanation):
         projectId: id,
         model: clip.model || "veo3",
         imageUrl: clip.imageUrl,
-        prompt: toStr(result.newScene.prompt),
+        prompt: toPrompt(result.newScene.prompt),
         dialogue: result.newScene.dialogue,
         order: clip.order + 1,
       })

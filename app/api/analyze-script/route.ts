@@ -6,149 +6,82 @@ import { ANTHROPIC_API_KEY, OPENAI_API_KEY } from "@/lib/env"
 export const dynamic = "force-dynamic"
 export const maxDuration = 120
 
-const PROMPT_TEMPLATE = (script: string) => `You are generating VEO 3.1 prompts for an image-to-video pipeline. The user will paste a script — each paragraph (separated by blank lines) is ONE scene. Do NOT split, merge, or reorder paragraphs.
+const PROMPT_TEMPLATE = (script: string) => `You are generating VEO 3.1 prompts for an image-to-video pipeline. Each paragraph of the script below (separated by blank lines) is ONE scene. Do NOT split, merge, or reorder paragraphs.
 
 ═══════════════════════════════════════════════
-CRITICAL: VEO 3.1 OFFICIAL SCHEMA — ONLY 6 KEYS
+CRITICAL RULES — VEO 3.1 best practices
 ═══════════════════════════════════════════════
 
-VEO 3.1 processes these 6 keys as independent computational axes. Using any other keys (like "shot", "subject", "dialogue", "negatives") makes the model ignore them or read them as generic text, producing inconsistent results.
+1. DO NOT DESCRIBE APPEARANCE. The image-to-video pipeline already provides clothes, hair, skin, age, face, setting. Describing what is already visible wastes tokens and disperses the model's attention. Use the image ONLY as grounding for believable actions and object interactions — never restate what it shows.
 
-The ONLY valid keys are:
+2. FRONT-LOAD THE CAMERA. The FIRST clause of every prompt must declare camera behavior, even for static shots. "Static shot, fixed camera, vertical 9:16" frees 100% of the model's processing for physics of lips, hands, and objects — which is exactly what matters.
 
-{
-  "camera": "",
-  "description": "",
-  "motion": "",
-  "audio": "",
-  "text": "none, no subtitles, no text overlay, no on-screen text, no watermarks, no logos",
-  "ending": ""
-}
+3. CONCRETE MECHANICAL VERBS, NEVER EMOTIONAL ONES. Instead of "speaks with urgency," describe the kinetic act: "opens mouth, gestures with right hand palm open, leans torso 10cm toward the lens." The model simulates mechanics, not emotions. Convert every emotion into body/face movements with measurements (cm, degrees, directions).
 
-═══════════════════════════════════════════════
-FIELD-BY-FIELD RULES
-═══════════════════════════════════════════════
+4. DIALOGUE WITHOUT QUOTES, WITH A COLON. Quotation marks activate the text decoder and burn subtitles onto the video. Always use a colon to introduce speech:
+   ✓ He speaks clearly and slowly: the bacterium that eats your insulin…
+   ✗ He says: "the bacterium that eats your insulin…"
 
-┌─ camera ─ ALWAYS first key
-│ Shot type + framing + orientation + lens feel
-│ Examples:
-│   "Static shot, fixed camera, vertical 9:16, medium shot, shallow depth of field"
-│   "Handheld slight natural sway, vertical 9:16, POV first-person perspective"
-│   "Slow push-in, vertical 9:16, medium close-up"
-│ Vary between scenes — don't repeat identical camera.
-└──
+5. NO SUBTITLES, NO OVERLAYS, NO ON-SCREEN TEXT. Every prompt MUST end with the exact phrase: (no subtitles, no text overlay). The model must not generate captions, watermarks, logos, burned-in titles, or any on-screen text under any circumstances. This is non-negotiable.
 
-┌─ description ─ Body mechanics + environment, TOGETHER
-│ - DO NOT describe subject appearance (clothes, hair, skin, age) — the I2V image already provides that
-│ - Use CONCRETE mechanical verbs with measurements (cm, degrees, directions)
-│ - Convert emotions into facial/body mechanics:
-│     "urgent" → "brow furrows, jaw tightens, leans forward 5cm"
-│     "confident" → "chest rises, shoulders square, chin lifts 3 degrees"
-│     "serious" → "lips press together, eyes narrow slightly"
-│ - Include environment/lighting at the END of description
-│ - To LOCK objects/gaze (avoid unwanted movement), add phrases like:
-│     "eyes remain locked on the camera lens throughout the entire clip"
-│     "the glucose meter remains absolutely frozen with its display unchanged"
-│     "he holds the phone steady in his right hand throughout the entire clip"
-└──
+6. 100-150 WORDS PER SCENE. Under 100 the model fills with generic motion; over 150 it ignores the tail of the prompt.
 
-┌─ motion ─ Ambient physics ONLY (separate from subject action)
-│ Fluids, particles, micro-movements, breathing, steam, ambient sway
-│ Examples:
-│   "Honey dripping in slow viscous strand, chest rises and falls with breathing"
-│   "Subtle natural hand micro-movements, faint steam rising from tea surface"
-│   "Slow circular dipper rotation inside cup, thick honey folding with visible viscosity"
-└──
+7. AUDIO BLOCK LAST, SEPARATED FROM VISUALS. Voice tone + pacing + ambient sound come at the END, isolated from the body/action description. Example: "Male voice, clear mid-tone, deliberate pacing, no background music."
 
-┌─ audio ─ Voice + SFX + (absence of) music
-│ - DIALOGUE goes HERE (never in other fields)
-│ - NEVER use quotes around the spoken text (quotes trigger on-screen subtitles)
-│ - Use a COLON to separate voice description from the spoken text
-│ - Format: "[voice description + pacing/tone]: [the actual words the speaker says]"
-│ - CRITICAL: Use the user's paragraph text VERBATIM after the colon. NEVER add, extend, invent, paraphrase, or pad the dialogue with extra words. The script is the source of truth — every spoken word must come from the original paragraph.
-│ - SPELL OUT ALL NUMBERS: "86" → "eighty six", "97%" → "ninety seven percent", "2" → "two" (this is the ONLY allowed transformation — spelling numerals into words)
-│ - If the paragraph is shorter than 12 words, leave it as-is. Do NOT fabricate filler content. (The 12-word soft-minimum is a VEO audio-engine heuristic — it is BETTER to pass the short line through than to invent words the user didn't write.)
-│ - End with explicit absence markers: "No background music" or "No background music, no sound effects"
-│ - For scenes WITHOUT dialogue: "No voice, no speech, no music. Soft ambient [describe ambient sound]"
-│ Examples:
-│   "Male voice speaks with confident authoritative pacing: mix pineapple skin in hot water with these two ingredients and never worry about your blood sugar levels ever again. No background music"
-│   "Female voice speaks off-camera with steady measured reading tone: [complete dialogue]. No background music"
-│   "No voice, no speech, no music. Soft ambient kitchen hum, gentle wooden stick stirring against glass"
-└──
-
-┌─ text ─ Subtitle blocker, ALWAYS fixed value with redundancy
-│ ALWAYS exactly: "none, no subtitles, no text overlay, no on-screen text, no watermarks, no logos"
-└──
-
-┌─ ending ─ Final frame state
-│ Describe the resting position of body + objects at the end of the 8s clip
-│ Vital for continuity when the final frame is reused as input image for the next clip
-│ Examples:
-│   "Final frame shows him with right hand resting on counter, eyes locked on camera"
-│   "Final frame shows honey dipper lowered into the jar with honey settled on surface"
-│   "Final frame shows her holding the cup at chest height with steam still rising"
-└──
+8. NEVER INVENT OR EXTEND DIALOGUE. Use the user's paragraph text VERBATIM after the colon. The ONLY allowed transformation is spelling numerals into words ("86" → "eighty six", "97%" → "ninety seven percent"). If a paragraph is short, leave it short — do not add filler phrases, do not paraphrase.
 
 ═══════════════════════════════════════════════
-SCENE TYPE PATTERNS (use the one that matches)
+STRUCTURE (in this order)
 ═══════════════════════════════════════════════
 
-1. Talking head — person facing camera, speaking
-   camera: "Static shot, fixed camera, vertical 9:16, medium shot"
-   description: body gestures + "eyes remain locked on camera lens"
-   motion: "subtle hand micro-movements, chest rises with breathing"
-   audio: "Male/Female voice speaks with [tone] pacing: [dialogue]. No background music"
+[CAMERA] + [MECHANICAL BODY ACTION] + [OBJECT INTERACTION] + [ENVIRONMENT / LIGHTING / PARTICLES] + [DIALOGUE with colon, no quotes] + [AUDIO / VOICE] + (no subtitles, no text overlay)
 
-2. POV preparation — hands manipulating objects, narrator off-camera
-   camera: "Handheld slight natural sway, vertical 9:16, POV first-person"
-   description: hand mechanics + object locks ("glucose meter remains absolutely frozen")
-   motion: fluid physics (honey dripping, steam rising)
-   audio: "[voice] speaks off-camera with [tone]: [dialogue]. [ambient SFX], no background music"
+═══════════════════════════════════════════════
+EXAMPLE — talking-head scene
+═══════════════════════════════════════════════
+Static shot, fixed camera, vertical 9:16. He extends his right index finger toward the camera lens, leans his torso forward 10cm. His left hand rests flat on the marble surface near the herb jar. Warm overhead recessed light casts soft shadows under his jaw. He speaks clearly and slowly: the bacterium that eats your insulin and causes dangerous blood sugar spikes. Camera holds steady throughout. Male voice, clear mid-tone, deliberate pacing, no background music. (no subtitles, no text overlay)
 
-3. Phone reading — person holding phone, reading aloud
-   camera: "Static shot, fixed camera, vertical 9:16, medium close-up"
-   description: "holds phone steady in right hand at chest height throughout entire clip without lowering"
-   audio: "Male/Female voice speaks with steady measured reading tone: [dialogue]. No background music"
+═══════════════════════════════════════════════
+EXAMPLE — preparation / POV scene
+═══════════════════════════════════════════════
+Static shot, fixed camera, vertical 9:16. His right hand picks up a pineapple peel from the glass bowl, moves it 30cm laterally and lowers it into the honey jar. His gaze follows his hand downward. Liquid in the jar ripples slightly on contact. Ambient warm overhead light, faint steam particles rising from the counter. He speaks while looking down: nine out of ten Americans have type two diabetes and less than one percent know this. Male voice, calm measured cadence, soft ambient kitchen hum. (no subtitles, no text overlay)
 
-4. Silent action — animation only, no dialogue
-   camera: "Static shot, fixed camera, vertical 9:16, medium close-up"
-   description: body mechanics describing the action
-   motion: the visual effect being shown
-   audio: "No voice, no speech, no music. Soft ambient [specific sound], [ambient detail]"
+═══════════════════════════════════════════════
+BEFORE GENERATING — study the image
+═══════════════════════════════════════════════
+Look at the avatar's setting, available props, lighting direction. Use this only to choose believable actions and object interactions. NEVER write anything that describes what the image already shows.
 
 ═══════════════════════════════════════════════
 OUTPUT FORMAT
 ═══════════════════════════════════════════════
-
-Return ONLY a JSON array, no markdown fences, no explanation. Each element must follow exactly this shape:
+Return ONLY a JSON array — no markdown fences, no commentary. Each element has this exact shape:
 
 [
   {
     "scene": 1,
-    "dialogue": "the complete paragraph text (used for bookkeeping)",
-    "prompt": {
-      "camera": "...",
-      "description": "...",
-      "motion": "...",
-      "audio": "...",
-      "text": "none, no subtitles, no text overlay, no on-screen text, no watermarks, no logos",
-      "ending": "..."
-    }
+    "dialogue": "the complete paragraph as spoken (used for bookkeeping)",
+    "prompt": "Static shot, fixed camera, vertical 9:16. [...full prose prompt ending with] (no subtitles, no text overlay)"
   },
   ...
 ]
 
 ═══════════════════════════════════════════════
-BEFORE GENERATING, STUDY THE IMAGE:
-═══════════════════════════════════════════════
-
-Look at the avatar image — note setting, objects on counter/desk, lighting direction, available props. Use this context to choose believable actions and shot types. NEVER describe what's visible in the image (the I2V pipeline preserves it).
-
-═══════════════════════════════════════════════
-SCRIPT TO PROCESS:
+SCRIPT TO PROCESS
 ═══════════════════════════════════════════════
 
 ${script}`
+
+// Safety net: guarantee the subtitle blocker is present at the end of every prompt.
+function enforceTextBlocker(prompt: string): string {
+  const trimmed = (prompt || "").trim()
+  if (/\(no subtitles,\s*no text overlay\)\s*$/i.test(trimmed)) return trimmed
+  // If there's a half-formed variant, drop it before appending the canonical form.
+  const cleaned = trimmed.replace(
+    /\(?\s*no\s+subtitles[^)]*\)?\s*$/i,
+    ""
+  ).trim()
+  return `${cleaned} (no subtitles, no text overlay)`
+}
 
 export async function POST(req: NextRequest) {
   if (!ANTHROPIC_API_KEY && !OPENAI_API_KEY)
@@ -210,35 +143,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Ensure text field always has the subtitle blocker
-    const TEXT_BLOCKER =
-      "none, no subtitles, no text overlay, no on-screen text, no watermarks, no logos"
-
-    const scenes = rawScenes.map((s) => {
-      let p = s.prompt
-      // If prompt came as a string, try to parse it back
-      if (typeof p === "string") {
-        try {
-          p = JSON.parse(p)
-        } catch {
-          p = { camera: "", description: p, motion: "", audio: "", text: TEXT_BLOCKER, ending: "" }
-        }
-      }
-      // Enforce 6-key schema + always-correct text blocker
-      const normalized = {
-        camera: p.camera || "",
-        description: p.description || "",
-        motion: p.motion || "",
-        audio: p.audio || "",
-        text: TEXT_BLOCKER,
-        ending: p.ending || "",
-      }
-      return {
-        scene: s.scene,
-        dialogue: s.dialogue,
-        prompt: JSON.stringify(normalized, null, 2),
-      }
-    })
+    const scenes = rawScenes.map((s) => ({
+      scene: s.scene,
+      dialogue: s.dialogue,
+      prompt: enforceTextBlocker(
+        typeof s.prompt === "string" ? s.prompt : JSON.stringify(s.prompt)
+      ),
+    }))
 
     return NextResponse.json({ scenes })
   } catch (err: any) {
