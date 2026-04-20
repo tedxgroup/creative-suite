@@ -9,6 +9,7 @@ import {
   RiCloseLine,
   RiCheckLine,
   RiArrowLeftLine,
+  RiLoader4Line,
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import {
@@ -184,8 +185,31 @@ export function BulkScenesDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {/* STEP 1 — input (hidden when scenes exist) */}
-        {!hasScenes && (
+        {/* LOADING — analyzing script */}
+        {analyzing && (
+          <div className="flex flex-1 flex-col items-center justify-center gap-5 py-20 text-center">
+            <div className="relative">
+              <div className="border-primary/20 border-t-primary size-12 animate-spin rounded-full border-2" />
+              <RiSparkling2Line className="text-primary absolute inset-0 m-auto size-5 animate-pulse" />
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-foreground text-sm font-medium">
+                Analisando script
+              </p>
+              <p className="text-muted-foreground max-w-[280px] text-[11px] leading-relaxed">
+                Claude está lendo seu script e dividindo em cenas otimizadas
+                para VEO 3.1 com prompts estruturados.
+              </p>
+            </div>
+            <div className="text-muted-foreground flex items-center gap-2 font-mono text-[10px]">
+              <RiLoader4Line className="size-3 animate-spin" />
+              <span>Isso pode levar 30-60 segundos</span>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 1 — input (hidden when scenes exist or analyzing) */}
+        {!hasScenes && !analyzing && (
           <>
             {taggedClips.length > 0 && (
               <div className="border-amber-500/30 bg-amber-500/5 flex items-center justify-between gap-2 border p-3">
@@ -340,18 +364,20 @@ export function BulkScenesDialog({
           </div>
         )}
 
-        <DialogFooter className="border-t pt-4">
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button
-            onClick={submit}
-            disabled={submitting || !hasScenes}
-          >
-            <RiCheckLine className="size-4" />
-            {submitting ? "Criando..." : "Criar todas as cenas"}
-          </Button>
-        </DialogFooter>
+        {!analyzing && (
+          <DialogFooter className="border-t pt-4">
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={submit}
+              disabled={submitting || !hasScenes}
+            >
+              <RiCheckLine className="size-4" />
+              {submitting ? "Criando..." : "Criar todas as cenas"}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   )
