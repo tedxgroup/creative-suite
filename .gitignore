@@ -28,8 +28,20 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# env files
+# env files (keep only .env.example tracked)
+.env
+.env.local
 .env*.local
+.env.production
+!.env.example
+
+# local data (legacy)
+/data
+/uploads
+/downloads
+
+# claude
+/.claude
 
 # typescript
 *.tsbuildinfo
