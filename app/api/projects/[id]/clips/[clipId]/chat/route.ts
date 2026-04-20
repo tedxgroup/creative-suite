@@ -41,7 +41,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   try {
     const imageBase64 = await prepareImage(clip.imageUrl)
-    const promptText = `You are refining a VEO 3.1 video prompt for an 8-second clip. Here is the current state:
+    const promptText = `You are refining a VEO 3.1 video prompt for an 8-second clip. The prompt follows Google VEO 3 best practice: STRUCTURED JSON, not plain text.
 
 CURRENT PROMPT:
 ${clip.prompt}
@@ -52,22 +52,48 @@ ${clip.dialogue || "(none)"}
 USER REQUEST:
 ${message}
 
-RULES:
-- Follow VEO 3.1 prompt structure: [CAMERA] + [MECHANICAL BODY ACTION] + [DIALOGUE with colon] + [AUDIO] + (no subtitles, no text overlay, no background music, no sound effects, no graphic elements)
-- Do NOT describe what's already visible in the image
-- Use concrete mechanical verbs with measurements (cm, degrees)
-- Dialogue uses colon, never quotes
-- Each scene's dialogue should fit in ~8 seconds (15-25 words max)
-- Prompt should be 100-150 words
+SCHEMA for the prompt JSON object:
+{
+  "shot": {
+    "type": "static | slow_zoom_in | slow_zoom_out | slight_push_in | handheld_slight",
+    "framing": "vertical 9:16, medium close-up"
+  },
+  "subject": {
+    "action": "concrete mechanical action with measurements",
+    "expression": "single adjective",
+    "posture": "optional — omit if not needed"
+  },
+  "interaction": "optional — object interaction or omit",
+  "environment": "ambient lighting/particle detail",
+  "dialogue": {
+    "speaker_voice": "male voice | female voice",
+    "delivery": "tone + pacing",
+    "text": "the COMPLETE dialogue"
+  },
+  "audio": { "voice_only": true, "ambient": "optional" },
+  "negatives": ["subtitles","text overlay","background music","sound effects","graphic overlays","motion graphics","on-screen text","logos","arrows","icons"]
+}
 
-IMPORTANT: If the dialogue exceeds 25 words, you MUST split it into two scenes. Return the second scene separately.
+RULES:
+- Keep the JSON schema above — update only the fields the user asked
+- Use concrete mechanical verbs with measurements (cm, degrees) in subject.action
+- Do NOT describe what's already visible in the image
+- Each scene's dialogue.text should fit ~8 seconds (15-25 words max)
+- negatives must always include the full list
+
+IMPORTANT: If the dialogue exceeds 25 words after your edits, split into two scenes.
 
 Return ONLY a JSON object (no markdown):
 {
-  "prompt": "the updated full VEO 3.1 prompt for this scene",
-  "dialogue": "the dialogue text for this scene",
-  "newScene": null or { "prompt": "prompt for overflow", "dialogue": "overflow dialogue" }
-}`
+  "prompt": { ...the structured JSON prompt object as specified above... },
+  "dialogue": "the dialogue text for this scene (matches prompt.dialogue.text)",
+  "newScene": null or {
+    "prompt": { ...structured JSON for overflow scene... },
+    "dialogue": "overflow dialogue"
+  }
+}
+
+Return ONLY the JSON object, no markdown, no explanation.`
 
     const claudeContent: any[] = []
     if (imageBase64) {
@@ -107,9 +133,13 @@ Return ONLY a JSON object (no markdown):
       )
     }
 
+    // Stringify JSON prompts coming from Claude (passed as strings to VEO)
+    const toStr = (p: unknown) =>
+      typeof p === "string" ? p : JSON.stringify(p, null, 2)
+
     // Update current clip
     const updatedClip = await updateClip(clipId, {
-      prompt: result.prompt,
+      prompt: toStr(result.prompt),
       dialogue: result.dialogue,
       status: "pending",
       taskId: null,
@@ -129,7 +159,7 @@ Return ONLY a JSON object (no markdown):
         projectId: id,
         model: clip.model || "veo3",
         imageUrl: clip.imageUrl,
-        prompt: result.newScene.prompt,
+        prompt: toStr(result.newScene.prompt),
         dialogue: result.newScene.dialogue,
         order: clip.order + 1,
       })
