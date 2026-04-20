@@ -34,6 +34,32 @@ import { cn } from "@/lib/utils"
 import type { VideoClip, ClipCategory } from "@/lib/types"
 import { CLIP_CATEGORIES, CLIP_CATEGORY_LABEL } from "@/lib/types"
 
+// Distinct hue per category — full Tailwind class strings so JIT picks them up.
+const CATEGORY_STYLES: Record<ClipCategory, string> = {
+  hook1:
+    "border-violet-500/40 bg-violet-500/10 text-violet-700 dark:text-violet-300",
+  hook2:
+    "border-sky-500/40 bg-sky-500/10 text-sky-700 dark:text-sky-300",
+  hook3:
+    "border-cyan-500/40 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",
+  hook4:
+    "border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300",
+  hook5:
+    "border-orange-500/40 bg-orange-500/10 text-orange-700 dark:text-orange-300",
+  broll:
+    "border-slate-500/40 bg-slate-500/10 text-slate-700 dark:text-slate-300",
+}
+
+// Tiny colored dot for the submenu row — same palette as the badge.
+const CATEGORY_DOT: Record<ClipCategory, string> = {
+  hook1: "bg-violet-500",
+  hook2: "bg-sky-500",
+  hook3: "bg-cyan-500",
+  hook4: "bg-fuchsia-500",
+  hook5: "bg-orange-500",
+  broll: "bg-slate-500",
+}
+
 interface ClipRowProps {
   clip: VideoClip
   onPlay?: (id: string) => void
@@ -148,7 +174,10 @@ export function ClipRow({
                 {category && (
                   <Badge
                     variant="outline"
-                    className="h-5 rounded-none border-violet-500/40 bg-violet-500/10 px-1.5 font-mono text-[10px] font-medium text-violet-700 dark:text-violet-300"
+                    className={cn(
+                      "h-5 rounded-none px-1.5 font-mono text-[10px] font-medium",
+                      CATEGORY_STYLES[category]
+                    )}
                   >
                     {CLIP_CATEGORY_LABEL[category]}
                   </Badge>
@@ -247,6 +276,12 @@ export function ClipRow({
                     onSetCategory?.(clip.id, category === cat ? null : cat)
                   }
                 >
+                  <span
+                    className={cn(
+                      "mr-2 inline-block size-2 rounded-full",
+                      CATEGORY_DOT[cat]
+                    )}
+                  />
                   {CLIP_CATEGORY_LABEL[cat]}
                   {category === cat && (
                     <RiCheckLine className="ml-auto size-3.5 text-primary" />
