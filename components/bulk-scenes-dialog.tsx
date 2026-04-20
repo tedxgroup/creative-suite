@@ -178,7 +178,7 @@ export function BulkScenesDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[92vh] flex-col sm:max-w-[720px]">
+      <DialogContent className="!flex !max-h-[92vh] !flex-col overflow-hidden sm:!max-w-[720px]">
         <DialogHeader>
           <DialogTitle>
             {hasScenes ? "Cenas geradas" : "Criar cenas"}
@@ -299,8 +299,8 @@ export function BulkScenesDialog({
 
         {/* STEP 2 — scenes only */}
         {hasScenes && (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <div className="mb-3 flex items-center gap-2">
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
+            <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
                 size="sm"
@@ -320,7 +320,7 @@ export function BulkScenesDialog({
                 </Button>
               </div>
             </div>
-            <ScrollArea className="flex-1 -mx-1 px-1">
+            <div className="min-h-0 flex-1 -mx-1 overflow-y-auto px-1">
               <div className="space-y-1.5">
                 {scenes.map((scene, i) => (
                   <Card
@@ -343,8 +343,7 @@ export function BulkScenesDialog({
                             updateDialogue(scene.id, e.target.value)
                           }
                           placeholder={`Fala da cena ${i + 1}...`}
-                          rows={2}
-                          className="resize-none rounded-none text-[12px]"
+                          className="h-[60px] max-h-[60px] resize-none rounded-none !text-[12px] [field-sizing:fixed]"
                         />
                       )}
                     </div>
@@ -359,7 +358,7 @@ export function BulkScenesDialog({
                   </Card>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         )}
 
