@@ -29,6 +29,7 @@ function mapClip(row: Record<string, any>): VideoClip {
     trimStart: row.trim_start != null ? Number(row.trim_start) : undefined,
     trimEnd: row.trim_end != null ? Number(row.trim_end) : undefined,
     tagged: row.tagged ?? false,
+    category: row.category ?? null,
     regenerated: row.regenerated ?? false,
     createdAt: row.created_at,
   }
@@ -182,6 +183,7 @@ export async function updateClip(
     trimStart: number | null
     trimEnd: number | null
     tagged: boolean
+    category: string | null
     regenerated: boolean
   }>
 ): Promise<VideoClip | null> {
@@ -200,6 +202,7 @@ export async function updateClip(
   if (patch.trimStart !== undefined) update.trim_start = patch.trimStart
   if (patch.trimEnd !== undefined) update.trim_end = patch.trimEnd
   if (patch.tagged !== undefined) update.tagged = patch.tagged
+  if (patch.category !== undefined) update.category = patch.category
   if (patch.regenerated !== undefined) update.regenerated = patch.regenerated
 
   const { data, error } = await supabaseAdmin

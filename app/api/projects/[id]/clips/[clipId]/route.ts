@@ -19,6 +19,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       trimStart: body.trimStart,
       trimEnd: body.trimEnd,
       tagged: body.tagged,
+      category: body.category,
     })
     if (!clip)
       return NextResponse.json(

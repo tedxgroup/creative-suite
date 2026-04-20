@@ -9,6 +9,32 @@ export type ClipStatus =
   | "fail"
 export type ClipProvider = "kie" | "gemini" | "wavespeed"
 
+export type ClipCategory =
+  | "hook1"
+  | "hook2"
+  | "hook3"
+  | "hook4"
+  | "hook5"
+  | "broll"
+
+export const CLIP_CATEGORY_LABEL: Record<ClipCategory, string> = {
+  hook1: "Hook 1",
+  hook2: "Hook 2",
+  hook3: "Hook 3",
+  hook4: "Hook 4",
+  hook5: "Hook 5",
+  broll: "Broll",
+}
+
+export const CLIP_CATEGORIES: ClipCategory[] = [
+  "hook1",
+  "hook2",
+  "hook3",
+  "hook4",
+  "hook5",
+  "broll",
+]
+
 export interface VideoClip {
   id: string
   order: number
@@ -26,6 +52,7 @@ export interface VideoClip {
   trimStart?: number
   trimEnd?: number
   tagged?: boolean
+  category?: ClipCategory | null
   regenerated?: boolean
   createdAt: string
 }

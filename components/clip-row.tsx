@@ -12,13 +12,27 @@ import {
   RiDeleteBinLine,
   RiDownloadLine,
   RiRefreshLine,
+  RiPriceTag3Line,
+  RiCloseLine,
+  RiCheckLine,
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu"
 import { ClipStatusBadge } from "./clip-status-badge"
 import { cn } from "@/lib/utils"
-import type { VideoClip } from "@/lib/types"
+import type { VideoClip, ClipCategory } from "@/lib/types"
+import { CLIP_CATEGORIES, CLIP_CATEGORY_LABEL } from "@/lib/types"
 
 interface ClipRowProps {
   clip: VideoClip
@@ -29,6 +43,7 @@ interface ClipRowProps {
   onDuplicate?: (id: string) => void
   onDelete?: (id: string) => void
   onToggleTag?: (id: string) => void
+  onSetCategory?: (id: string, category: string | null) => void
 }
 
 export function ClipRow({
@@ -40,6 +55,7 @@ export function ClipRow({
   onDuplicate,
   onDelete,
   onToggleTag,
+  onSetCategory,
 }: ClipRowProps) {
   const {
     attributes,
@@ -61,175 +77,220 @@ export function ClipRow({
   const text = isInfiniteTalk
     ? clip.prompt || "Clip com áudio"
     : clip.dialogue || clip.prompt
+  const category = clip.category as ClipCategory | null | undefined
 
   return (
     <div ref={setNodeRef} style={style}>
-    <Card
-      size="sm"
-      className={cn(
-        "group/clip flex-row items-center gap-3 px-3 py-2.5 transition-colors hover:ring-foreground/20",
-        isDragging && "ring-foreground/40 z-10"
-      )}
-    >
-      {/* Drag handle + order */}
-      <div className="flex items-center gap-1 text-muted-foreground">
-        <span
-          {...attributes}
-          {...listeners}
-          role="button"
-          tabIndex={0}
-          className="flex size-5 cursor-grab touch-none select-none items-center justify-center outline-none active:cursor-grabbing focus-visible:ring-1 focus-visible:ring-ring"
-          aria-label="Arrastar para reordenar"
-        >
-          <RiDraggable className="size-3.5" />
-        </span>
-        <span className="font-mono text-[11px] w-5 text-right tabular-nums">
-          {String(clip.order).padStart(2, "0")}
-        </span>
-      </div>
-
-      {/* Thumbnail */}
-      <div
-        className={cn(
-          "bg-muted relative flex aspect-video w-20 flex-shrink-0 items-center justify-center overflow-hidden ring-1 ring-foreground/10",
-          hasVideo && "cursor-pointer hover:ring-primary/50"
-        )}
-        onClick={hasVideo ? () => onPlay?.(clip.id) : undefined}
-      >
-        {clip.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={clip.imageUrl}
-            alt=""
-            className="size-full object-cover"
-          />
-        ) : (
-          <RiImageLine className="text-muted-foreground/40 size-4" />
-        )}
-        {hasVideo && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover/clip:opacity-100">
-            <RiPlayCircleFill className="size-7 text-white drop-shadow-md" />
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="min-w-0 flex-1">
-        <p className="text-foreground line-clamp-2 text-[12px]/relaxed">
-          {text}
-        </p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <ClipStatusBadge status={clip.status} />
-          <Badge
-            variant="outline"
-            className="h-5 rounded-none px-1.5 font-mono text-[10px] font-normal text-muted-foreground"
-          >
-            {isInfiniteTalk ? "InfiniteTalk" : "VEO 3.1"}
-          </Badge>
-          {clip.regenerated && (
-            <Badge
-              variant="outline"
-              className="h-5 rounded-none px-1.5 font-mono text-[10px] font-normal text-muted-foreground"
-            >
-              Regravado
-            </Badge>
-          )}
-          {clip.tagged && (
-            <Badge
-              variant="outline"
-              className="h-5 rounded-none border-amber-500/30 bg-amber-500/10 px-1.5 font-mono text-[10px] font-normal text-amber-600 dark:text-amber-400"
-            >
-              Refazer
-            </Badge>
-          )}
-          {clip.error && (
-            <span className="text-destructive truncate font-mono text-[10px]">
-              {clip.error}
-            </span>
-          )}
-          {clip.localPath && (
-            <a
-              href={clip.localPath}
-              download
-              onClick={(e) => e.stopPropagation()}
-              className="text-emerald-600 dark:text-emerald-400 font-mono text-[10px] hover:underline"
-            >
-              Salvo
-            </a>
-          )}
-        </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex flex-shrink-0 items-center gap-0.5">
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn(
-            "size-7",
-            clip.tagged
-              ? "text-amber-500 hover:text-amber-600"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-          title={clip.tagged ? "Remover marcação" : "Marcar para refazer"}
-          onClick={() => onToggleTag?.(clip.id)}
-        >
-          <RiFlag2Line className="size-3.5" />
-        </Button>
-
-        {clip.status === "fail" && (
-          <Button
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <Card
             size="sm"
-            variant="default"
-            className="h-7"
-            onClick={() => onRetry?.(clip.id)}
+            className={cn(
+              "group/clip flex-row items-center gap-3 px-3 py-2.5 transition-colors hover:ring-foreground/20",
+              isDragging && "ring-foreground/40 z-10"
+            )}
           >
-            <RiRefreshLine className="size-3" />
-            Retry
-          </Button>
-        )}
-        {clip.status === "pending" && (
-          <Button
-            size="sm"
-            variant="default"
-            className="h-7"
-            onClick={() => onGenerate?.(clip.id)}
-          >
-            Gerar
-          </Button>
-        )}
-        {hasVideo && !clip.localPath && (
-          <Button
-            size="sm"
-            variant="secondary"
-            className="h-7 text-emerald-600 dark:text-emerald-400"
-            onClick={() => onDownload?.(clip.id)}
-          >
-            <RiDownloadLine className="size-3" />
-            Baixar
-          </Button>
-        )}
+            {/* Drag handle + order */}
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <span
+                {...attributes}
+                {...listeners}
+                role="button"
+                tabIndex={0}
+                className="flex size-5 cursor-grab touch-none select-none items-center justify-center outline-none active:cursor-grabbing focus-visible:ring-1 focus-visible:ring-ring"
+                aria-label="Arrastar para reordenar"
+              >
+                <RiDraggable className="size-3.5" />
+              </span>
+              <span className="font-mono text-[11px] w-5 text-right tabular-nums">
+                {String(clip.order).padStart(2, "0")}
+              </span>
+            </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-foreground size-7"
-          title="Duplicar"
-          onClick={() => onDuplicate?.(clip.id)}
-        >
-          <RiFileCopyLine className="size-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-destructive size-7"
-          title="Excluir"
-          onClick={() => onDelete?.(clip.id)}
-        >
-          <RiDeleteBinLine className="size-3.5" />
-        </Button>
-      </div>
-    </Card>
+            {/* Thumbnail */}
+            <div
+              className={cn(
+                "bg-muted relative flex aspect-video w-20 flex-shrink-0 items-center justify-center overflow-hidden ring-1 ring-foreground/10",
+                hasVideo && "cursor-pointer hover:ring-primary/50"
+              )}
+              onClick={hasVideo ? () => onPlay?.(clip.id) : undefined}
+            >
+              {clip.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={clip.imageUrl}
+                  alt=""
+                  className="size-full object-cover"
+                />
+              ) : (
+                <RiImageLine className="text-muted-foreground/40 size-4" />
+              )}
+              {hasVideo && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover/clip:opacity-100">
+                  <RiPlayCircleFill className="size-7 text-white drop-shadow-md" />
+                </div>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="min-w-0 flex-1">
+              <p className="text-foreground line-clamp-2 text-[12px]/relaxed">
+                {text}
+              </p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <ClipStatusBadge status={clip.status} />
+                <Badge
+                  variant="outline"
+                  className="h-5 rounded-none px-1.5 font-mono text-[10px] font-normal text-muted-foreground"
+                >
+                  {isInfiniteTalk ? "InfiniteTalk" : "VEO 3.1"}
+                </Badge>
+                {category && (
+                  <Badge
+                    variant="outline"
+                    className="h-5 rounded-none border-violet-500/40 bg-violet-500/10 px-1.5 font-mono text-[10px] font-medium text-violet-700 dark:text-violet-300"
+                  >
+                    {CLIP_CATEGORY_LABEL[category]}
+                  </Badge>
+                )}
+                {clip.regenerated && (
+                  <Badge
+                    variant="outline"
+                    className="h-5 rounded-none px-1.5 font-mono text-[10px] font-normal text-muted-foreground"
+                  >
+                    Regravado
+                  </Badge>
+                )}
+                {clip.tagged && (
+                  <Badge
+                    variant="outline"
+                    className="h-5 rounded-none border-amber-500/30 bg-amber-500/10 px-1.5 font-mono text-[10px] font-normal text-amber-600 dark:text-amber-400"
+                  >
+                    Refazer
+                  </Badge>
+                )}
+                {clip.error && (
+                  <span className="text-destructive truncate font-mono text-[10px]">
+                    {clip.error}
+                  </span>
+                )}
+                {clip.localPath && (
+                  <a
+                    href={clip.localPath}
+                    download
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-emerald-600 dark:text-emerald-400 font-mono text-[10px] hover:underline"
+                  >
+                    Salvo
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Actions (inline — generate/retry/duplicate/delete only) */}
+            <div className="flex flex-shrink-0 items-center gap-0.5">
+              {clip.status === "fail" && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="h-7"
+                  onClick={() => onRetry?.(clip.id)}
+                >
+                  <RiRefreshLine className="size-3" />
+                  Retry
+                </Button>
+              )}
+              {clip.status === "pending" && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="h-7"
+                  onClick={() => onGenerate?.(clip.id)}
+                >
+                  Gerar
+                </Button>
+              )}
+
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-foreground size-7"
+                title="Duplicar"
+                onClick={() => onDuplicate?.(clip.id)}
+              >
+                <RiFileCopyLine className="size-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-destructive size-7"
+                title="Excluir"
+                onClick={() => onDelete?.(clip.id)}
+              >
+                <RiDeleteBinLine className="size-3.5" />
+              </Button>
+            </div>
+          </Card>
+        </ContextMenuTrigger>
+
+        <ContextMenuContent className="w-52">
+          <ContextMenuSub>
+            <ContextMenuSubTrigger>
+              <RiPriceTag3Line className="mr-2 size-3.5" />
+              Tag
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-44">
+              {CLIP_CATEGORIES.map((cat) => (
+                <ContextMenuItem
+                  key={cat}
+                  onSelect={() =>
+                    onSetCategory?.(clip.id, category === cat ? null : cat)
+                  }
+                >
+                  {CLIP_CATEGORY_LABEL[cat]}
+                  {category === cat && (
+                    <RiCheckLine className="ml-auto size-3.5 text-primary" />
+                  )}
+                </ContextMenuItem>
+              ))}
+              {category && (
+                <>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem
+                    onSelect={() => onSetCategory?.(clip.id, null)}
+                    className="text-muted-foreground"
+                  >
+                    <RiCloseLine className="mr-2 size-3.5" />
+                    Remover tag
+                  </ContextMenuItem>
+                </>
+              )}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+
+          <ContextMenuSeparator />
+
+          <ContextMenuItem onSelect={() => onToggleTag?.(clip.id)}>
+            <RiFlag2Line
+              className={cn(
+                "mr-2 size-3.5",
+                clip.tagged && "text-amber-500"
+              )}
+            />
+            {clip.tagged ? "Remover marcação" : "Marcar para refazer"}
+          </ContextMenuItem>
+
+          {hasVideo && !clip.localPath && (
+            <ContextMenuItem
+              onSelect={() => onDownload?.(clip.id)}
+              className="text-emerald-700 dark:text-emerald-400"
+            >
+              <RiDownloadLine className="mr-2 size-3.5" />
+              Baixar vídeo
+            </ContextMenuItem>
+          )}
+        </ContextMenuContent>
+      </ContextMenu>
     </div>
   )
 }

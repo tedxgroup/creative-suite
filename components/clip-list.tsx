@@ -29,6 +29,7 @@ interface ClipListProps {
   onDuplicate?: (id: string) => void
   onDelete?: (id: string) => void
   onToggleTag?: (id: string) => void
+  onSetCategory?: (id: string, category: string | null) => void
 }
 
 export function ClipList({ clips, onReorder, ...handlers }: ClipListProps) {

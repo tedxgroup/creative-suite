@@ -205,15 +205,32 @@ export default function ProjectDetailPage() {
     const clip = project.clips.find((c) => c.id === clipId)
     if (!clip) return
     const newVal = !clip.tagged
-    // Optimistic
-    const updated = { ...project }
-    const c = updated.clips.find((x) => x.id === clipId)
-    if (c) c.tagged = newVal
-    mutateProject(updated, false)
+    // Optimistic — fresh clip refs so SWR + useMemo detect the change
+    const updatedClips = project.clips.map((c) =>
+      c.id === clipId ? { ...c, tagged: newVal } : c
+    )
+    mutateProject({ ...project, clips: updatedClips }, false)
     try {
       await api(`/projects/${id}/clips/${clipId}`, {
         method: "PUT",
         body: { tagged: newVal },
+      })
+    } catch (err: any) {
+      toast.error(err.message)
+      mutateProject()
+    }
+  }
+
+  async function handleSetCategory(clipId: string, category: string | null) {
+    if (!project) return
+    const updatedClips = project.clips.map((c) =>
+      c.id === clipId ? { ...c, category: (category ?? null) as any } : c
+    )
+    mutateProject({ ...project, clips: updatedClips }, false)
+    try {
+      await api(`/projects/${id}/clips/${clipId}`, {
+        method: "PUT",
+        body: { category },
       })
     } catch (err: any) {
       toast.error(err.message)
@@ -408,6 +425,7 @@ export default function ProjectDetailPage() {
           onDuplicate={handleDuplicate}
           onDelete={handleDelete}
           onToggleTag={handleToggleTag}
+          onSetCategory={handleSetCategory}
           onPlay={(cid) => setPreviewClipId(cid)}
         />
       )}
