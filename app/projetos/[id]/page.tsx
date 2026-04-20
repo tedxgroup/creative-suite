@@ -96,14 +96,14 @@ export default function ProjectDetailPage() {
 
   async function handleReorder(orderedIds: string[]) {
     if (!project) return
-    // Optimistic update
-    const updated = { ...project }
-    orderedIds.forEach((id, i) => {
-      const c = updated.clips.find((x) => x.id === id)
-      if (c) c.order = i + 1
-    })
-    updated.clips.sort((a, b) => a.order - b.order)
-    mutateProject(updated, false)
+    // Optimistic update — build fresh references so SWR + useMemo detect the change
+    const reorderedClips = orderedIds
+      .map((cid, i) => {
+        const c = project.clips.find((x) => x.id === cid)
+        return c ? { ...c, order: i + 1 } : null
+      })
+      .filter((c): c is NonNullable<typeof c> => c !== null)
+    mutateProject({ ...project, clips: reorderedClips }, false)
     try {
       await api(`/projects/${id}/reorder`, {
         method: "POST",
@@ -111,7 +111,7 @@ export default function ProjectDetailPage() {
       })
     } catch (err: any) {
       toast.error("Erro ao reordenar")
-      mutateProject() // refetch
+      mutateProject() // refetch to recover server truth
     }
   }
 

@@ -78,9 +78,6 @@ export function ClipRow({
           {...listeners}
           role="button"
           tabIndex={0}
-          onPointerDownCapture={(e) =>
-            console.log("[dnd] handle pointerdown", clip.id, e.pointerType)
-          }
           className="flex size-5 cursor-grab touch-none select-none items-center justify-center outline-none active:cursor-grabbing focus-visible:ring-1 focus-visible:ring-ring"
           aria-label="Arrastar para reordenar"
         >
