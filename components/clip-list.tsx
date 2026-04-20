@@ -9,6 +9,7 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
 } from "@dnd-kit/core"
 import {
   arrayMove,
@@ -43,7 +44,15 @@ export function ClipList({ clips, onReorder, ...handlers }: ClipListProps) {
   )
   const ids = React.useMemo(() => sorted.map((c) => c.id), [sorted])
 
+  function handleDragStart(event: DragStartEvent) {
+    console.log("[dnd] drag start", event.active.id)
+  }
+
   function handleDragEnd(event: DragEndEvent) {
+    console.log("[dnd] drag end", {
+      active: event.active.id,
+      over: event.over?.id,
+    })
     const { active, over } = event
     if (!over || active.id === over.id) return
 
@@ -58,6 +67,7 @@ export function ClipList({ clips, onReorder, ...handlers }: ClipListProps) {
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
