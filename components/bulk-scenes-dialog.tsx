@@ -8,6 +8,7 @@ import {
   RiAddLine,
   RiCloseLine,
   RiCheckLine,
+  RiArrowLeftLine,
 } from "@remixicon/react"
 import { Button } from "@/components/ui/button"
 import {
@@ -116,28 +117,33 @@ export function BulkScenesDialog({
 
   function showManualMode() {
     setScenes([
-      { id: Date.now(), prompt: "" },
-      { id: Date.now() + 1, prompt: "" },
-      { id: Date.now() + 2, prompt: "" },
+      { id: Date.now(), prompt: "", dialogue: "" },
+      { id: Date.now() + 1, prompt: "", dialogue: "" },
+      { id: Date.now() + 2, prompt: "", dialogue: "" },
     ])
   }
 
   function addScene() {
-    setScenes((s) => [...s, { id: Date.now(), prompt: "" }])
+    setScenes((s) => [...s, { id: Date.now(), prompt: "", dialogue: "" }])
   }
 
   function removeScene(id: number) {
     setScenes((s) => s.filter((x) => x.id !== id))
   }
 
-  function updateScene(id: number, value: string) {
+  function updateDialogue(id: number, value: string) {
     setScenes((s) =>
-      s.map((x) => (x.id === id ? { ...x, prompt: value } : x))
+      s.map((x) => (x.id === id ? { ...x, dialogue: value } : x))
     )
   }
 
+  function backToEdit() {
+    if (scenes.length && !confirm("Descartar as cenas geradas e voltar?")) return
+    setScenes([])
+  }
+
   async function submit() {
-    const filled = scenes.filter((s) => s.prompt.trim())
+    const filled = scenes.filter((s) => (s.prompt.trim() || s.dialogue?.trim()))
     if (!filled.length) {
       toast.error("Preencha pelo menos uma cena")
       return
@@ -145,11 +151,14 @@ export function BulkScenesDialog({
     setSubmitting(true)
     try {
       for (const scene of filled) {
+        // If scene only has dialogue (manual mode, no AI prompt),
+        // use dialogue as prompt so VEO has something to generate
+        const promptToSend = scene.prompt.trim() || scene.dialogue?.trim() || ""
         await api(`/projects/${projectId}/clips`, {
           method: "POST",
           body: {
-            prompt: scene.prompt.trim(),
-            dialogue: scene.dialogue || null,
+            prompt: promptToSend,
+            dialogue: scene.dialogue?.trim() || null,
             imageUrl,
           },
         })
@@ -164,149 +173,162 @@ export function BulkScenesDialog({
     }
   }
 
+  const hasScenes = scenes.length > 0
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[92vh] flex-col sm:max-w-[800px]">
+      <DialogContent className="flex max-h-[92vh] flex-col sm:max-w-[720px]">
         <DialogHeader>
-          <DialogTitle>Criar cenas</DialogTitle>
+          <DialogTitle>
+            {hasScenes ? "Cenas geradas" : "Criar cenas"}
+          </DialogTitle>
         </DialogHeader>
 
-        {/* Tagged clips suggestion */}
-        {taggedClips.length > 0 && scenes.length === 0 && (
-          <div className="border-amber-500/30 bg-amber-500/5 flex items-center justify-between gap-2 border p-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-foreground text-xs font-medium">
-                {taggedClips.length} clip{taggedClips.length > 1 ? "s" : ""}{" "}
-                marcado{taggedClips.length > 1 ? "s" : ""} para refazer
-              </p>
-              <p className="text-muted-foreground mt-0.5 text-[10px]">
-                Importar as falas para reescrever os prompts.
-              </p>
+        {/* STEP 1 — input (hidden when scenes exist) */}
+        {!hasScenes && (
+          <>
+            {taggedClips.length > 0 && (
+              <div className="border-amber-500/30 bg-amber-500/5 flex items-center justify-between gap-2 border p-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-foreground text-xs font-medium">
+                    {taggedClips.length} clip{taggedClips.length > 1 ? "s" : ""}{" "}
+                    marcado{taggedClips.length > 1 ? "s" : ""} para refazer
+                  </p>
+                  <p className="text-muted-foreground mt-0.5 text-[10px]">
+                    Importar as falas para reescrever os prompts.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-amber-500/30 text-amber-700 dark:text-amber-400"
+                  onClick={importTagged}
+                >
+                  Importar falas
+                </Button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-[160px_1fr] gap-4">
+              <div className="grid gap-2">
+                <Label>Avatar / Imagem</Label>
+                <div
+                  className={cn(
+                    "border-border bg-muted/30 hover:bg-muted/60 flex h-[160px] cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden border border-dashed text-center transition-colors",
+                    imageUrl && "border-primary/40 bg-primary/5 border-solid"
+                  )}
+                  onClick={() => inputRef.current?.click()}
+                >
+                  {imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={imageUrl}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <>
+                      <RiUploadCloud2Line className="text-muted-foreground/60 size-5" />
+                      <p className="text-muted-foreground text-[11px]">
+                        Enviar imagem
+                      </p>
+                    </>
+                  )}
+                  <input
+                    ref={inputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => uploadImage(e.target.files?.[0])}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="script">Script / Copy completa</Label>
+                <Textarea
+                  id="script"
+                  value={script}
+                  onChange={(e) => setScript(e.target.value)}
+                  placeholder="Cole aqui o script. O Claude vai dividir em cenas com prompts otimizados..."
+                  rows={6}
+                  className="resize-none text-[12px] leading-relaxed"
+                />
+              </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-amber-500/30 text-amber-700 dark:text-amber-400"
-              onClick={importTagged}
-            >
-              Importar falas
-            </Button>
-          </div>
+
+            <div className="flex items-center gap-2">
+              <Button onClick={analyze} disabled={analyzing}>
+                <RiSparkling2Line className="size-4" />
+                {analyzing ? "Analisando..." : "Analisar e dividir em cenas"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground ml-auto"
+                onClick={showManualMode}
+              >
+                Modo manual
+              </Button>
+            </div>
+          </>
         )}
 
-        {/* Step 1: image + script */}
-        <div className="grid grid-cols-[160px_1fr] gap-4">
-          <div className="grid gap-2">
-            <Label>Avatar / Imagem</Label>
-            <div
-              className={cn(
-                "border-border bg-muted/30 hover:bg-muted/60 flex h-[160px] cursor-pointer flex-col items-center justify-center gap-1.5 border border-dashed text-center transition-colors",
-                imageUrl && "border-primary/40 bg-primary/5 border-solid"
-              )}
-              onClick={() => inputRef.current?.click()}
-            >
-              {imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={imageUrl}
-                  alt=""
-                  className="size-full object-cover"
-                />
-              ) : (
-                <>
-                  <RiUploadCloud2Line className="text-muted-foreground/60 size-5" />
-                  <p className="text-muted-foreground text-[11px]">
-                    Enviar imagem
-                  </p>
-                </>
-              )}
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => uploadImage(e.target.files?.[0])}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="script">Script / Copy completa</Label>
-            <Textarea
-              id="script"
-              value={script}
-              onChange={(e) => setScript(e.target.value)}
-              placeholder="Cole aqui o script. O Claude vai dividir em cenas com prompts otimizados..."
-              rows={6}
-              className="resize-none text-[12px] leading-relaxed"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button onClick={analyze} disabled={analyzing}>
-            <RiSparkling2Line className="size-4" />
-            {analyzing ? "Analisando..." : "Analisar e dividir em cenas"}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground ml-auto"
-            onClick={showManualMode}
-          >
-            Modo manual
-          </Button>
-        </div>
-
-        {/* Generated scenes */}
-        {scenes.length > 0 && (
-          <div className="flex min-h-0 flex-1 flex-col border-t pt-4">
+        {/* STEP 2 — scenes only */}
+        {hasScenes && (
+          <div className="flex min-h-0 flex-1 flex-col">
             <div className="mb-3 flex items-center gap-2">
-              <span className="text-foreground text-xs font-medium">
-                Cenas geradas
-              </span>
-              <Badge variant="outline" className="rounded-none font-mono">
-                {scenes.length}
-              </Badge>
-              <div className="ml-auto flex gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground -ml-2"
+                onClick={backToEdit}
+              >
+                <RiArrowLeftLine className="size-3.5" />
+                Voltar
+              </Button>
+              <div className="ml-auto flex items-center gap-2">
+                <Badge variant="outline" className="rounded-none font-mono">
+                  {scenes.length} {scenes.length === 1 ? "cena" : "cenas"}
+                </Badge>
                 <Button size="sm" variant="secondary" onClick={addScene}>
                   <RiAddLine className="size-3.5" />
                   Cena
                 </Button>
               </div>
             </div>
-            <ScrollArea className="flex-1 -mx-2 px-2">
+            <ScrollArea className="flex-1 -mx-1 px-1">
               <div className="space-y-1.5">
                 {scenes.map((scene, i) => (
                   <Card
                     key={scene.id}
                     size="sm"
-                    className="flex-row gap-3 px-3 py-2"
+                    className="flex-row items-start gap-3 px-3 py-2.5"
                   >
-                    <div className="flex w-6 flex-shrink-0 items-center pt-1.5 font-mono text-[11px] text-muted-foreground tabular-nums">
+                    <div className="flex w-6 flex-shrink-0 items-center pt-0.5 font-mono text-[11px] text-muted-foreground tabular-nums">
                       {String(i + 1).padStart(2, "0")}
                     </div>
                     <div className="min-w-0 flex-1">
-                      {scene.dialogue && (
-                        <p className="text-primary mb-1.5 line-clamp-2 border-l-2 border-primary/40 bg-primary/5 px-2 py-1 text-[10px]">
-                          <span className="font-mono font-medium text-muted-foreground">
-                            Fala:{" "}
-                          </span>
+                      {scene.dialogue ? (
+                        <p className="text-foreground text-[12px] leading-relaxed">
                           {scene.dialogue}
                         </p>
+                      ) : (
+                        <Textarea
+                          value={scene.dialogue || ""}
+                          onChange={(e) =>
+                            updateDialogue(scene.id, e.target.value)
+                          }
+                          placeholder={`Fala da cena ${i + 1}...`}
+                          rows={2}
+                          className="resize-none rounded-none text-[12px]"
+                        />
                       )}
-                      <Textarea
-                        value={scene.prompt}
-                        onChange={(e) => updateScene(scene.id, e.target.value)}
-                        placeholder={`Prompt da cena ${i + 1}...`}
-                        rows={2}
-                        className="resize-none rounded-none text-[11px]"
-                      />
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground hover:text-destructive size-7 flex-shrink-0"
+                      className="text-muted-foreground hover:text-destructive size-6 flex-shrink-0"
                       onClick={() => removeScene(scene.id)}
                     >
                       <RiCloseLine className="size-3.5" />
@@ -324,7 +346,7 @@ export function BulkScenesDialog({
           </Button>
           <Button
             onClick={submit}
-            disabled={submitting || scenes.length === 0}
+            disabled={submitting || !hasScenes}
           >
             <RiCheckLine className="size-4" />
             {submitting ? "Criando..." : "Criar todas as cenas"}
