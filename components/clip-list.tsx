@@ -33,7 +33,7 @@ interface ClipListProps {
 
 export function ClipList({ clips, onReorder, ...handlers }: ClipListProps) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 3 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 

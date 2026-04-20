@@ -63,9 +63,8 @@ export function ClipRow({
     : clip.dialogue || clip.prompt
 
   return (
+    <div ref={setNodeRef} style={style}>
     <Card
-      ref={setNodeRef}
-      style={style}
       size="sm"
       className={cn(
         "group/clip flex-row items-center gap-3 px-3 py-2.5 transition-colors hover:ring-foreground/20",
@@ -74,14 +73,16 @@ export function ClipRow({
     >
       {/* Drag handle + order */}
       <div className="flex items-center gap-1 text-muted-foreground">
-        <button
+        <span
           {...attributes}
           {...listeners}
-          className="cursor-grab touch-none active:cursor-grabbing"
-          aria-label="Arrastar"
+          role="button"
+          tabIndex={0}
+          className="flex size-5 cursor-grab touch-none select-none items-center justify-center outline-none active:cursor-grabbing focus-visible:ring-1 focus-visible:ring-ring"
+          aria-label="Arrastar para reordenar"
         >
           <RiDraggable className="size-3.5" />
-        </button>
+        </span>
         <span className="font-mono text-[11px] w-5 text-right tabular-nums">
           {String(clip.order).padStart(2, "0")}
         </span>
@@ -229,5 +230,6 @@ export function ClipRow({
         </Button>
       </div>
     </Card>
+    </div>
   )
 }
