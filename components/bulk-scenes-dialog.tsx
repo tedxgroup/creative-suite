@@ -240,8 +240,8 @@ export function BulkScenesDialog({
               </div>
             )}
 
-            <div className="grid grid-cols-[160px_1fr] gap-4">
-              <div className="grid gap-2">
+            <div className="grid grid-cols-[160px_1fr] items-start gap-4">
+              <div className="flex flex-col gap-2">
                 <Label>Avatar / Imagem</Label>
                 <div
                   className={cn(
@@ -288,7 +288,7 @@ export function BulkScenesDialog({
                 </div>
               </div>
 
-              <div className="grid gap-2">
+              <div className="flex flex-col gap-2">
                 <Label htmlFor="script">Script / Copy completa</Label>
                 <Textarea
                   id="script"
@@ -300,19 +300,22 @@ export function BulkScenesDialog({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button onClick={analyze} disabled={analyzing}>
-                <RiSparkling2Line className="size-4" />
-                {analyzing ? "Analisando..." : "Analisar e dividir em cenas"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground ml-auto"
-                onClick={showManualMode}
-              >
-                Modo manual
-              </Button>
+            <div className="grid grid-cols-[160px_1fr] gap-4">
+              <div />
+              <div className="flex items-center gap-2">
+                <Button onClick={analyze} disabled={analyzing}>
+                  <RiSparkling2Line className="size-4" />
+                  {analyzing ? "Analisando..." : "Analisar e dividir em cenas"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground ml-auto"
+                  onClick={showManualMode}
+                >
+                  Modo manual
+                </Button>
+              </div>
             </div>
           </>
         )}
