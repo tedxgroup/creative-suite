@@ -206,6 +206,7 @@ export function AddClipDialog({
                     accept="image/*"
                     label="Enviar imagem"
                     onFile={uploadImage}
+                    className="h-[220px]"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -244,6 +245,7 @@ export function AddClipDialog({
                     accept="image/*"
                     label="Enviar imagem"
                     onFile={uploadImage}
+                    className="h-[160px]"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -337,6 +339,7 @@ function UploadArea({
   accept,
   label,
   onFile,
+  className,
 }: {
   url: string | null
   filename?: string | null
@@ -344,6 +347,7 @@ function UploadArea({
   accept: string
   label: string
   onFile: (file: File) => Promise<void>
+  className?: string
 }) {
   const inputRef = React.useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = React.useState(false)
@@ -363,8 +367,11 @@ function UploadArea({
   return (
     <div
       className={cn(
-        "border-border bg-muted/30 hover:bg-muted/60 group flex min-h-[100px] cursor-pointer flex-col items-center justify-center gap-1.5 border border-dashed p-3 text-center transition-colors",
-        url && "border-solid border-primary/40 bg-primary/5"
+        "border-border bg-muted/30 hover:bg-muted/60 group flex min-h-[100px] cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden border border-dashed text-center transition-colors",
+        !url && "p-3",
+        url && "border-solid border-primary/40 bg-primary/5",
+        url && !isImage && "p-3",
+        className
       )}
       onClick={() => inputRef.current?.click()}
     >
@@ -373,7 +380,7 @@ function UploadArea({
         <img
           src={url}
           alt=""
-          className="max-h-24 w-auto object-contain"
+          className="size-full object-cover"
         />
       ) : url ? (
         <>
