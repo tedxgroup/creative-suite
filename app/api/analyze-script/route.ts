@@ -65,11 +65,9 @@ FIELD-BY-FIELD RULES
 │ - NEVER use quotes around the spoken text (quotes trigger on-screen subtitles)
 │ - Use a COLON to separate voice description from the spoken text
 │ - Format: "[voice description + pacing/tone]: [the actual words the speaker says]"
-│ - MINIMUM 12 words in the spoken dialogue — shorter triggers "unable to generate audio" errors
-│ - If the original paragraph is too short, naturally extend it with a phrase like:
-│     "and I am going to show you exactly how right now"
-│     "and this changes everything you thought you knew"
-│ - SPELL OUT ALL NUMBERS: "86" → "eighty six", "97%" → "ninety seven percent", "2" → "two"
+│ - CRITICAL: Use the user's paragraph text VERBATIM after the colon. NEVER add, extend, invent, paraphrase, or pad the dialogue with extra words. The script is the source of truth — every spoken word must come from the original paragraph.
+│ - SPELL OUT ALL NUMBERS: "86" → "eighty six", "97%" → "ninety seven percent", "2" → "two" (this is the ONLY allowed transformation — spelling numerals into words)
+│ - If the paragraph is shorter than 12 words, leave it as-is. Do NOT fabricate filler content. (The 12-word soft-minimum is a VEO audio-engine heuristic — it is BETTER to pass the short line through than to invent words the user didn't write.)
 │ - End with explicit absence markers: "No background music" or "No background music, no sound effects"
 │ - For scenes WITHOUT dialogue: "No voice, no speech, no music. Soft ambient [describe ambient sound]"
 │ Examples:

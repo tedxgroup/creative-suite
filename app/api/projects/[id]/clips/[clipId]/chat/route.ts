@@ -64,7 +64,7 @@ FIELD RULES
 
 • motion — ambient physics ONLY (fluids, particles, breathing, steam, micro-movements) — separate from subject action.
 
-• audio — voice + SFX. DIALOGUE goes HERE. NEVER use quotes around speech (triggers subtitles). Use a COLON: "[voice description + pacing]: [the actual words]". MINIMUM 12 WORDS in the spoken dialogue. SPELL OUT NUMBERS ("86" → "eighty six", "97%" → "ninety seven percent"). End with "No background music" or "No background music, no sound effects". For silent scenes: "No voice, no speech, no music. Soft ambient [specific sound]".
+• audio — voice + SFX. DIALOGUE goes HERE. NEVER use quotes around speech (triggers subtitles). Use a COLON: "[voice description + pacing]: [the actual words]". CRITICAL: never invent, extend, or pad the dialogue — only use words the user wrote (in the current dialogue or their explicit chat request). SPELL OUT NUMBERS as the ONLY allowed transformation ("86" → "eighty six", "97%" → "ninety seven percent"). End with "No background music" or "No background music, no sound effects". For silent scenes: "No voice, no speech, no music. Soft ambient [specific sound]".
 
 • text — ALWAYS exactly: "none, no subtitles, no text overlay, no on-screen text, no watermarks, no logos"
 
@@ -90,7 +90,7 @@ RULES FOR THE EDIT
 • Keep the 6-key schema exactly — update only the fields the user asked to change
 • If the dialogue in "audio" exceeds ~25 words (>8 seconds), you MUST split into two scenes (use newScene)
 • If the user's request is about emotion, translate it into mechanical facial/body changes in "description"
-• If the user asks about the spoken line, update it ONLY inside "audio" (after the colon, no quotes, ≥12 words, numbers spelled out)
+• If the user asks about the spoken line, update it ONLY inside "audio" (after the colon, no quotes, numbers spelled out) — and ONLY with words the user explicitly provided; never invent or extend dialogue on your own
 • Preserve the "text" field verbatim
 
 ═══════════════════════════════════════════════
