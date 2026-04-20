@@ -50,6 +50,7 @@ export function BulkScenesDialog({
   onCreated,
 }: BulkScenesDialogProps) {
   const [imageUrl, setImageUrl] = React.useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = React.useState(false)
   const [script, setScript] = React.useState("")
   const [scenes, setScenes] = React.useState<Scene[]>([])
   const [analyzing, setAnalyzing] = React.useState(false)
@@ -59,6 +60,7 @@ export function BulkScenesDialog({
   React.useEffect(() => {
     if (open) {
       setImageUrl(null)
+      setUploadingImage(false)
       setScript("")
       setScenes([])
     }
@@ -66,11 +68,16 @@ export function BulkScenesDialog({
 
   async function uploadImage(file: File | undefined) {
     if (!file) return
-    const fd = new FormData()
-    fd.append("image", file)
-    const res = await fetch("/api/upload", { method: "POST", body: fd })
-    const data = await res.json()
-    if (data.url) setImageUrl(data.url)
+    setUploadingImage(true)
+    try {
+      const fd = new FormData()
+      fd.append("image", file)
+      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      const data = await res.json()
+      if (data.url) setImageUrl(data.url)
+    } finally {
+      setUploadingImage(false)
+    }
   }
 
   function importTagged() {
@@ -238,17 +245,30 @@ export function BulkScenesDialog({
                 <Label>Avatar / Imagem</Label>
                 <div
                   className={cn(
-                    "border-border bg-muted/30 hover:bg-muted/60 flex h-[160px] cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden border border-dashed text-center transition-colors",
-                    imageUrl && "border-primary/40 bg-primary/5 border-solid"
+                    "border-border bg-muted/30 hover:bg-muted/60 relative flex h-[160px] cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden border border-dashed text-center transition-colors",
+                    imageUrl && "border-primary/40 bg-primary/5 border-solid",
+                    uploadingImage && "pointer-events-none"
                   )}
                   onClick={() => inputRef.current?.click()}
                 >
+                  {uploadingImage && (
+                    <div className="bg-background/70 absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 backdrop-blur-sm">
+                      <div className="relative">
+                        <div className="border-primary/20 border-t-primary size-8 animate-spin rounded-full border-2" />
+                        <div className="bg-primary absolute inset-0 m-auto size-2 animate-ping rounded-full" />
+                      </div>
+                      <p className="text-muted-foreground font-mono text-[10px]">
+                        Enviando…
+                      </p>
+                    </div>
+                  )}
                   {imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
+                      key={imageUrl}
                       src={imageUrl}
                       alt=""
-                      className="size-full object-cover"
+                      className="animate-in fade-in zoom-in-95 size-full object-cover duration-500"
                     />
                   ) : (
                     <>

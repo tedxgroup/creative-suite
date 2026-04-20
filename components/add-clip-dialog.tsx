@@ -367,36 +367,47 @@ function UploadArea({
   return (
     <div
       className={cn(
-        "border-border bg-muted/30 hover:bg-muted/60 group flex min-h-[100px] cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden border border-dashed text-center transition-colors",
+        "border-border bg-muted/30 hover:bg-muted/60 group relative flex min-h-[100px] cursor-pointer flex-col items-center justify-center gap-1.5 overflow-hidden border border-dashed text-center transition-colors",
         !url && "p-3",
         url && "border-solid border-primary/40 bg-primary/5",
         url && !isImage && "p-3",
+        uploading && "pointer-events-none",
         className
       )}
       onClick={() => inputRef.current?.click()}
     >
+      {uploading && (
+        <div className="bg-background/70 absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 backdrop-blur-sm">
+          <div className="relative">
+            <div className="border-primary/20 border-t-primary size-8 animate-spin rounded-full border-2" />
+            <div className="bg-primary absolute inset-0 m-auto size-2 animate-ping rounded-full" />
+          </div>
+          <p className="text-muted-foreground font-mono text-[10px]">
+            Enviando…
+          </p>
+        </div>
+      )}
       {url && isImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          key={url}
           src={url}
           alt=""
-          className="size-full object-cover"
+          className="animate-in fade-in zoom-in-95 size-full object-cover duration-500"
         />
       ) : url ? (
-        <>
+        <div className="animate-in fade-in zoom-in-95 flex flex-col items-center gap-1.5 duration-300">
           <RiCheckLine className="text-primary size-4" />
           <p className="text-foreground truncate text-[11px]">
             {filename || "Enviado"}
           </p>
-        </>
+        </div>
       ) : (
         <>
           {icon || (
             <RiUploadCloud2Line className="text-muted-foreground/60 size-5" />
           )}
-          <p className="text-muted-foreground text-[11px]">
-            {uploading ? "Enviando..." : label}
-          </p>
+          <p className="text-muted-foreground text-[11px]">{label}</p>
         </>
       )}
       <input
