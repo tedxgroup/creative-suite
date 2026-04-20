@@ -41,7 +41,38 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   try {
     const imageBase64 = await prepareImage(clip.imageUrl)
-    const promptText = `You are refining a VEO 3.1 video prompt for an 8-second clip. The prompt follows Google VEO 3 best practice: STRUCTURED JSON, not plain text.
+    const promptText = `You are refining a VEO 3.1 video prompt for an 8-second image-to-video clip.
+
+The prompt MUST use the VEO 3.1 OFFICIAL SCHEMA — only 6 keys, processed as independent computational axes:
+
+{
+  "camera": "",
+  "description": "",
+  "motion": "",
+  "audio": "",
+  "text": "none, no subtitles, no text overlay, no on-screen text, no watermarks, no logos",
+  "ending": ""
+}
+
+═══════════════════════════════════════════════
+FIELD RULES
+═══════════════════════════════════════════════
+
+• camera — shot type + framing + orientation (e.g. "Static shot, fixed camera, vertical 9:16, medium shot, shallow depth of field")
+
+• description — body mechanics + environment TOGETHER. DO NOT describe subject appearance (the I2V image provides it). Use concrete mechanical verbs with measurements (cm, degrees, directions). Convert emotions into facial/body mechanics (e.g. "urgent" → "brow furrows, jaw tightens, leans forward 5cm"). Include locks like "eyes remain locked on the camera lens throughout the entire clip" or "he holds the phone steady in his right hand throughout the entire clip". End with environment/lighting detail.
+
+• motion — ambient physics ONLY (fluids, particles, breathing, steam, micro-movements) — separate from subject action.
+
+• audio — voice + SFX. DIALOGUE goes HERE. NEVER use quotes around speech (triggers subtitles). Use a COLON: "[voice description + pacing]: [the actual words]". MINIMUM 12 WORDS in the spoken dialogue. SPELL OUT NUMBERS ("86" → "eighty six", "97%" → "ninety seven percent"). End with "No background music" or "No background music, no sound effects". For silent scenes: "No voice, no speech, no music. Soft ambient [specific sound]".
+
+• text — ALWAYS exactly: "none, no subtitles, no text overlay, no on-screen text, no watermarks, no logos"
+
+• ending — final frame state (body position + object state). Vital for continuity between clips.
+
+═══════════════════════════════════════════════
+CURRENT STATE
+═══════════════════════════════════════════════
 
 CURRENT PROMPT:
 ${clip.prompt}
@@ -52,48 +83,36 @@ ${clip.dialogue || "(none)"}
 USER REQUEST:
 ${message}
 
-SCHEMA for the prompt JSON object:
+═══════════════════════════════════════════════
+RULES FOR THE EDIT
+═══════════════════════════════════════════════
+
+• Keep the 6-key schema exactly — update only the fields the user asked to change
+• If the dialogue in "audio" exceeds ~25 words (>8 seconds), you MUST split into two scenes (use newScene)
+• If the user's request is about emotion, translate it into mechanical facial/body changes in "description"
+• If the user asks about the spoken line, update it ONLY inside "audio" (after the colon, no quotes, ≥12 words, numbers spelled out)
+• Preserve the "text" field verbatim
+
+═══════════════════════════════════════════════
+OUTPUT FORMAT
+═══════════════════════════════════════════════
+
+Return ONLY a JSON object (no markdown, no explanation):
 {
-  "shot": {
-    "type": "static | slow_zoom_in | slow_zoom_out | slight_push_in | handheld_slight",
-    "framing": "vertical 9:16, medium close-up"
+  "prompt": {
+    "camera": "...",
+    "description": "...",
+    "motion": "...",
+    "audio": "...",
+    "text": "none, no subtitles, no text overlay, no on-screen text, no watermarks, no logos",
+    "ending": "..."
   },
-  "subject": {
-    "action": "concrete mechanical action with measurements",
-    "expression": "single adjective",
-    "posture": "optional — omit if not needed"
-  },
-  "interaction": "optional — object interaction or omit",
-  "environment": "ambient lighting/particle detail",
-  "dialogue": {
-    "speaker_voice": "male voice | female voice",
-    "delivery": "tone + pacing",
-    "text": "the COMPLETE dialogue"
-  },
-  "audio": { "voice_only": true, "ambient": "optional" },
-  "negatives": ["subtitles","text overlay","background music","sound effects","graphic overlays","motion graphics","on-screen text","logos","arrows","icons"]
-}
-
-RULES:
-- Keep the JSON schema above — update only the fields the user asked
-- Use concrete mechanical verbs with measurements (cm, degrees) in subject.action
-- Do NOT describe what's already visible in the image
-- Each scene's dialogue.text should fit ~8 seconds (15-25 words max)
-- negatives must always include the full list
-
-IMPORTANT: If the dialogue exceeds 25 words after your edits, split into two scenes.
-
-Return ONLY a JSON object (no markdown):
-{
-  "prompt": { ...the structured JSON prompt object as specified above... },
-  "dialogue": "the dialogue text for this scene (matches prompt.dialogue.text)",
-  "newScene": null or {
-    "prompt": { ...structured JSON for overflow scene... },
-    "dialogue": "overflow dialogue"
+  "dialogue": "the scene's spoken words in plain text (must match what appears after the colon in prompt.audio)",
+  "newScene": null | {
+    "prompt": { ...same 6-key schema... },
+    "dialogue": "overflow spoken words"
   }
-}
-
-Return ONLY the JSON object, no markdown, no explanation.`
+}`
 
     const claudeContent: any[] = []
     if (imageBase64) {
@@ -133,9 +152,30 @@ Return ONLY the JSON object, no markdown, no explanation.`
       )
     }
 
-    // Stringify JSON prompts coming from Claude (passed as strings to VEO)
-    const toStr = (p: unknown) =>
-      typeof p === "string" ? p : JSON.stringify(p, null, 2)
+    // Normalize to the 6-key VEO schema + force the text blocker verbatim
+    const TEXT_BLOCKER =
+      "none, no subtitles, no text overlay, no on-screen text, no watermarks, no logos"
+
+    const toStr = (p: unknown) => {
+      let obj: any = p
+      if (typeof p === "string") {
+        try {
+          obj = JSON.parse(p)
+        } catch {
+          return p
+        }
+      }
+      if (!obj || typeof obj !== "object") return ""
+      const normalized = {
+        camera: obj.camera || "",
+        description: obj.description || "",
+        motion: obj.motion || "",
+        audio: obj.audio || "",
+        text: TEXT_BLOCKER,
+        ending: obj.ending || "",
+      }
+      return JSON.stringify(normalized, null, 2)
+    }
 
     // Update current clip
     const updatedClip = await updateClip(clipId, {
