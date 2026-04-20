@@ -233,7 +233,7 @@ export default function ProjectDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-6 py-6 sm:px-10 sm:py-8 lg:px-16">
         <Skeleton className="h-8 w-64 rounded-none" />
         <Skeleton className="h-12 w-full rounded-none" />
         {[...Array(5)].map((_, i) => (
@@ -245,7 +245,7 @@ export default function ProjectDetailPage() {
 
   if (!project) {
     return (
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col items-center justify-center gap-3 px-4 py-20 text-center">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col items-center justify-center gap-3 px-6 py-20 text-center sm:px-10 lg:px-16">
         <RiAlertLine className="text-muted-foreground size-8" />
         <p className="text-foreground text-sm font-medium">
           Projeto não encontrado
@@ -261,7 +261,7 @@ export default function ProjectDetailPage() {
   const needsGeneration = stats!.pending > 0 || stats!.failed > 0
 
   return (
-    <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-3 px-4 py-5 sm:px-6 sm:py-6">
+    <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-3 px-6 py-5 sm:px-10 sm:py-6 lg:px-16">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
