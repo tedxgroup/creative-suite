@@ -17,7 +17,18 @@ export async function POST(req: NextRequest, { params }: Params) {
       { status: 404 }
     )
 
-  const { imageUrl, prompt, order, dialogue, audioUrl, model } = await req.json()
+  const {
+    imageUrl,
+    prompt,
+    order,
+    dialogue,
+    audioUrl,
+    model,
+    kind,
+    visualDirection,
+    suggestedProps,
+    category,
+  } = await req.json()
   const clipModel: ClipModel = model === "infinitetalk" ? "infinitetalk" : "veo3"
 
   if (clipModel === "infinitetalk") {
@@ -43,6 +54,10 @@ export async function POST(req: NextRequest, { params }: Params) {
       prompt: prompt || "",
       dialogue: dialogue || null,
       order,
+      kind: kind === "broll" ? "broll" : kind === "talking_head" ? "talking_head" : undefined,
+      visualDirection: visualDirection ?? null,
+      suggestedProps: Array.isArray(suggestedProps) ? suggestedProps : undefined,
+      category: category ?? null,
     })
     return NextResponse.json(clip)
   } catch (err: any) {

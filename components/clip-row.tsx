@@ -128,7 +128,7 @@ export function ClipRow({
               >
                 <RiDraggable className="size-3.5" />
               </span>
-              <span className="font-mono text-[11px] w-5 text-right tabular-nums">
+              <span className="font-mono text-xs w-5 text-right tabular-nums">
                 {String(clip.order).padStart(2, "0")}
               </span>
             </div>
@@ -167,7 +167,7 @@ export function ClipRow({
                 <ClipStatusBadge status={clip.status} />
                 <Badge
                   variant="outline"
-                  className="h-5 rounded-none px-1.5 font-mono text-[10px] font-normal text-muted-foreground"
+                  className="h-5 rounded-md px-1.5 font-mono text-[11px] font-normal text-muted-foreground"
                 >
                   {isInfiniteTalk ? "InfiniteTalk" : "VEO 3.1"}
                 </Badge>
@@ -175,7 +175,7 @@ export function ClipRow({
                   <Badge
                     variant="outline"
                     className={cn(
-                      "h-5 rounded-none px-1.5 font-mono text-[10px] font-medium",
+                      "h-5 rounded-md px-1.5 font-mono text-[11px] font-medium",
                       CATEGORY_STYLES[category]
                     )}
                   >
@@ -185,7 +185,7 @@ export function ClipRow({
                 {clip.regenerated && (
                   <Badge
                     variant="outline"
-                    className="h-5 rounded-none px-1.5 font-mono text-[10px] font-normal text-muted-foreground"
+                    className="h-5 rounded-md px-1.5 font-mono text-[11px] font-normal text-muted-foreground"
                   >
                     Regravado
                   </Badge>
@@ -193,13 +193,13 @@ export function ClipRow({
                 {clip.tagged && (
                   <Badge
                     variant="outline"
-                    className="h-5 rounded-none border-amber-500/30 bg-amber-500/10 px-1.5 font-mono text-[10px] font-normal text-amber-600 dark:text-amber-400"
+                    className="h-5 rounded-md border-amber-500/30 bg-amber-500/10 px-1.5 font-mono text-[11px] font-normal text-amber-600 dark:text-amber-400"
                   >
                     Refazer
                   </Badge>
                 )}
                 {clip.error && (
-                  <span className="text-destructive truncate font-mono text-[10px]">
+                  <span className="text-destructive truncate font-mono text-[11px]">
                     {clip.error}
                   </span>
                 )}
@@ -208,7 +208,7 @@ export function ClipRow({
                     href={clip.localPath}
                     download
                     onClick={(e) => e.stopPropagation()}
-                    className="text-emerald-600 dark:text-emerald-400 font-mono text-[10px] hover:underline"
+                    className="text-emerald-600 dark:text-emerald-400 font-mono text-[11px] hover:underline"
                   >
                     Salvo
                   </a>

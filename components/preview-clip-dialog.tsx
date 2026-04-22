@@ -144,7 +144,7 @@ export function PreviewClipDialog({
                 autoPlay
                 controls
                 playsInline
-                className="ring-foreground/10 block max-h-[80vh] w-auto rounded-none ring-1"
+                className="ring-foreground/10 block max-h-[80vh] w-auto rounded-md ring-1"
               />
               {/* Floating navigation pill over video */}
               <div className="pointer-events-none absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full border border-white/10 bg-black/55 px-1.5 py-1 backdrop-blur-md">
@@ -159,7 +159,7 @@ export function PreviewClipDialog({
                 >
                   <RiArrowLeftSLine className="size-3.5" />
                 </Button>
-                <span className="px-1.5 font-mono text-[10px] text-white/85">
+                <span className="px-1.5 font-mono text-[11px] text-white/85">
                   {String(clip.order).padStart(2, "0")} /{" "}
                   {String(readyClips.length).padStart(2, "0")}
                 </span>
@@ -180,7 +180,7 @@ export function PreviewClipDialog({
             {/* Right panel */}
             <div className="bg-card flex w-[400px] flex-shrink-0 flex-col border-l">
               <div className="flex items-center justify-between border-b px-4 py-3">
-                <span className="text-muted-foreground font-mono text-[11px] tracking-tight">
+                <span className="text-muted-foreground font-mono text-xs tracking-tight">
                   Detalhes da cena
                 </span>
                 <Button
@@ -236,7 +236,7 @@ export function PreviewClipDialog({
                       onChange={(e) => setChatInput(e.target.value)}
                       placeholder="Ajustar gesto, câmera..."
                       disabled={sending}
-                      className="h-8 rounded-none text-[11px]"
+                      className="h-8 rounded-md text-xs"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault()
@@ -266,7 +266,7 @@ export function PreviewClipDialog({
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-muted-foreground mb-1.5 font-mono text-[10px] uppercase tracking-wider">
+      <p className="text-muted-foreground mb-1.5 font-mono text-[11px] uppercase tracking-wider">
         {label}
       </p>
       {children}
@@ -284,13 +284,13 @@ function ChatMessage({
   return (
     <div
       className={cn(
-        "max-w-[90%] px-2.5 py-1.5 text-[11px] leading-relaxed",
+        "max-w-[90%] px-2.5 py-1.5 text-xs leading-relaxed",
         role === "user" &&
           "bg-primary text-primary-foreground ml-auto",
         role === "ai" &&
           "bg-muted text-foreground ring-1 ring-foreground/10",
         role === "system" &&
-          "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto font-mono text-center text-[10px]"
+          "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mx-auto font-mono text-center text-[11px]"
       )}
     >
       {children}

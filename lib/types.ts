@@ -9,6 +9,13 @@ export type ClipStatus =
   | "fail"
 export type ClipProvider = "kie" | "gemini" | "wavespeed"
 
+export type ClipKind = "talking_head" | "broll"
+
+export interface SuggestedProp {
+  tag: "pessoa" | "cenário" | "pose" | "ângulo" | "luz" | "estilo" | "objeto"
+  description: string
+}
+
 export type ClipCategory =
   | "hook1"
   | "hook2"
@@ -54,13 +61,34 @@ export interface VideoClip {
   tagged?: boolean
   category?: ClipCategory | null
   regenerated?: boolean
+  kind?: ClipKind
+  visualDirection?: string | null
+  suggestedProps?: SuggestedProp[]
   createdAt: string
+}
+
+export interface SceneDraftScene {
+  id: number
+  dialogue: string
+  prompt: string
+  imageUrl: string | null
+}
+
+export interface SceneDraft {
+  script: string
+  baseImageUrl: string | null
+  scenes: SceneDraftScene[]
+  updatedAt: string
 }
 
 export interface VideoProject {
   id: string
   name: string
   createdBy?: string | null
+  baseAvatarUrl?: string | null
+  copyText?: string | null
+  sceneFlowId?: string | null
+  sceneDraft?: SceneDraft | null
   createdAt: string
   clips: VideoClip[]
 }
