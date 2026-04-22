@@ -14,6 +14,7 @@ import {
   RiMoonLine,
   RiMenuLine,
   RiLogoutBoxLine,
+  RiFolderImageLine,
 } from "@remixicon/react"
 import { supabaseBrowser } from "@/lib/supabase/client"
 import {
@@ -37,6 +38,7 @@ const tabs = [
   { id: "videos", label: "Vídeos", href: "/", icon: RiVideoLine },
   { id: "vozes", label: "Vozes", href: "/vozes", icon: RiVoiceprintLine },
   { id: "imagens", label: "Imagens", href: "/imagens", icon: RiImageLine },
+  { id: "galeria", label: "Galeria", href: "/galeria", icon: RiFolderImageLine },
 ]
 
 function isActive(href: string, pathname: string): boolean {
@@ -68,7 +70,7 @@ export function TopNav() {
   return (
     <header className="bg-background flex h-12 items-center gap-3 border-b px-4 sm:px-6">
       <Link href="/" className="flex items-center gap-2">
-        <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center font-mono text-[10px] font-bold tracking-tighter">
+        <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center font-mono text-[11px] font-bold tracking-tighter">
           CS
         </div>
         <span className="text-foreground hidden text-xs font-medium tracking-tight sm:inline">

@@ -6,6 +6,8 @@ import type {
   ClipModel,
   ClipStatus,
   ClipProvider,
+  ClipKind,
+  SuggestedProp,
 } from "./types"
 
 // =============================================
@@ -31,6 +33,9 @@ function mapClip(row: Record<string, any>): VideoClip {
     tagged: row.tagged ?? false,
     category: row.category ?? null,
     regenerated: row.regenerated ?? false,
+    kind: (row.kind as ClipKind) ?? "talking_head",
+    visualDirection: row.visual_direction ?? null,
+    suggestedProps: (row.suggested_props as SuggestedProp[]) ?? [],
     createdAt: row.created_at,
   }
 }
@@ -40,9 +45,24 @@ function mapProject(row: Record<string, any>, clips: VideoClip[] = []): VideoPro
     id: row.id,
     name: row.name,
     createdBy: row.created_by ?? null,
+    baseAvatarUrl: row.base_avatar_url ?? null,
+    copyText: row.copy_text ?? null,
+    sceneFlowId: row.scene_flow_id ?? null,
+    sceneDraft: row.scene_draft ?? null,
     createdAt: row.created_at,
     clips,
   }
+}
+
+export async function updateProjectSceneDraft(
+  id: string,
+  draft: unknown | null
+): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from("video_projects")
+    .update({ scene_draft: draft })
+    .eq("id", id)
+  if (error) throw error
 }
 
 // =============================================
@@ -114,6 +134,26 @@ export async function updateProjectName(id: string, name: string): Promise<void>
   if (error) throw error
 }
 
+export async function updateProjectAgentState(
+  id: string,
+  patch: {
+    baseAvatarUrl?: string | null
+    copyText?: string | null
+    sceneFlowId?: string | null
+  }
+): Promise<void> {
+  const update: Record<string, any> = {}
+  if (patch.baseAvatarUrl !== undefined) update.base_avatar_url = patch.baseAvatarUrl
+  if (patch.copyText !== undefined) update.copy_text = patch.copyText
+  if (patch.sceneFlowId !== undefined) update.scene_flow_id = patch.sceneFlowId
+  if (Object.keys(update).length === 0) return
+  const { error } = await supabaseAdmin
+    .from("video_projects")
+    .update(update)
+    .eq("id", id)
+  if (error) throw error
+}
+
 export async function deleteProject(id: string): Promise<void> {
   // Cascade deletes clips automatically
   const { error } = await supabaseAdmin
@@ -135,6 +175,10 @@ export interface CreateClipInput {
   prompt: string
   dialogue?: string | null
   order?: number
+  kind?: ClipKind
+  visualDirection?: string | null
+  suggestedProps?: SuggestedProp[]
+  category?: string | null
 }
 
 export async function createClip(input: CreateClipInput): Promise<VideoClip> {
@@ -159,6 +203,10 @@ export async function createClip(input: CreateClipInput): Promise<VideoClip> {
       dialogue: input.dialogue ?? null,
       order,
       status: "pending",
+      kind: input.kind ?? "talking_head",
+      visual_direction: input.visualDirection ?? null,
+      suggested_props: input.suggestedProps ?? [],
+      category: input.category ?? null,
     })
     .select()
     .single()
@@ -185,6 +233,9 @@ export async function updateClip(
     tagged: boolean
     category: string | null
     regenerated: boolean
+    kind: ClipKind
+    visualDirection: string | null
+    suggestedProps: SuggestedProp[]
   }>
 ): Promise<VideoClip | null> {
   const update: Record<string, any> = {}
@@ -200,6 +251,9 @@ export async function updateClip(
   if (patch.localPath !== undefined) update.local_path = patch.localPath
   if (patch.error !== undefined) update.error = patch.error
   if (patch.trimStart !== undefined) update.trim_start = patch.trimStart
+  if (patch.kind !== undefined) update.kind = patch.kind
+  if (patch.visualDirection !== undefined) update.visual_direction = patch.visualDirection
+  if (patch.suggestedProps !== undefined) update.suggested_props = patch.suggestedProps
   if (patch.trimEnd !== undefined) update.trim_end = patch.trimEnd
   if (patch.tagged !== undefined) update.tagged = patch.tagged
   if (patch.category !== undefined) update.category = patch.category

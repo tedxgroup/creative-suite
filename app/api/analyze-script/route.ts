@@ -4,83 +4,200 @@ import { prepareImage } from "@/lib/imageHelpers"
 import { ANTHROPIC_API_KEY, OPENAI_API_KEY } from "@/lib/env"
 
 export const dynamic = "force-dynamic"
-export const maxDuration = 120
+export const maxDuration = 180
 
-const PROMPT_TEMPLATE = (script: string) => `You are generating VEO 3.1 prompts for an image-to-video pipeline. Each paragraph of the script below (separated by blank lines) is ONE scene. Do NOT split, merge, or reorder paragraphs.
+const MAX_SCENES_PER_BATCH = 10
+
+const LEGACY_PROMPT = (script: string) => `You are generating VEO 3.1 prompts for an image-to-video pipeline. Each paragraph of the script below (separated by blank lines) is ONE scene. Do NOT split, merge, or reorder paragraphs.
 
 ═══════════════════════════════════════════════
 CRITICAL RULES — VEO 3.1 best practices
 ═══════════════════════════════════════════════
 
-1. DO NOT DESCRIBE APPEARANCE. The image-to-video pipeline already provides clothes, hair, skin, age, face, setting. Describing what is already visible wastes tokens and disperses the model's attention. Use the image ONLY as grounding for believable actions and object interactions — never restate what it shows.
-
-2. FRONT-LOAD THE CAMERA. The FIRST clause of every prompt must declare camera behavior, even for static shots. "Static shot, fixed camera, vertical 9:16" frees 100% of the model's processing for physics of lips, hands, and objects — which is exactly what matters.
-
-3. CONCRETE MECHANICAL VERBS, NEVER EMOTIONAL ONES. Instead of "speaks with urgency," describe the kinetic act: "opens mouth, gestures with right hand palm open, leans torso 10cm toward the lens." The model simulates mechanics, not emotions. Convert every emotion into body/face movements with measurements (cm, degrees, directions).
-
-4. DIALOGUE WITHOUT QUOTES, WITH A COLON. Quotation marks activate the text decoder and burn subtitles onto the video. Always use a colon to introduce speech:
+1. DO NOT DESCRIBE APPEARANCE. The image already provides clothes, hair, skin, age, face, setting. Never restate what it shows.
+2. FRONT-LOAD THE CAMERA. First clause = camera behavior, even for static shots.
+3. CONCRETE MACRO ACTIONS, NOT MICRO DETAIL. Describe general body motion ("extends right hand forward", "leans in slightly"). Avoid finger positions, finger counting, or centimeter/degree measurements — Veo 3.1 Lite glitches on fine finger articulation.
+4. NO EMOTIONAL ADJECTIVES. Translate emotion into mechanics, keep it general.
+5. DIALOGUE WITH A COLON, NEVER QUOTES. Quotes activate the subtitle engine.
    ✓ He speaks clearly and slowly: the bacterium that eats your insulin…
    ✗ He says: "the bacterium that eats your insulin…"
+6. NO SUBTITLES, NO OVERLAYS. Every prompt MUST end with: (no subtitles, no text overlay)
+7. 70-100 WORDS PER SCENE.
+8. AUDIO BLOCK LAST, SEPARATED FROM VISUALS.
+9. NEVER INVENT OR EXTEND DIALOGUE. Use paragraph text VERBATIM after the colon. Only allowed: numerals to words.
 
-5. NO SUBTITLES, NO OVERLAYS, NO ON-SCREEN TEXT. Every prompt MUST end with the exact phrase: (no subtitles, no text overlay). The model must not generate captions, watermarks, logos, burned-in titles, or any on-screen text under any circumstances. This is non-negotiable.
+STRUCTURE (in order):
+[CAMERA] + [2-3 MACRO ACTIONS] + [SUBTLE ENVIRONMENT] + [DIALOGUE with colon] + [AUDIO] + (no subtitles, no text overlay)
 
-6. 100-150 WORDS PER SCENE. Under 100 the model fills with generic motion; over 150 it ignores the tail of the prompt.
+OUTPUT FORMAT
+Return ONLY a JSON array:
+[
+  { "scene": 1, "dialogue": "...", "prompt": "..." },
+  ...
+]
 
-7. AUDIO BLOCK LAST, SEPARATED FROM VISUALS. Voice tone + pacing + ambient sound come at the END, isolated from the body/action description. Example: "Male voice, clear mid-tone, deliberate pacing, no background music."
+SCRIPT
+${script}`
 
-8. NEVER INVENT OR EXTEND DIALOGUE. Use the user's paragraph text VERBATIM after the colon. The ONLY allowed transformation is spelling numerals into words ("86" → "eighty six", "97%" → "ninety seven percent"). If a paragraph is short, leave it short — do not add filler phrases, do not paraphrase.
-
-═══════════════════════════════════════════════
-STRUCTURE (in this order)
-═══════════════════════════════════════════════
-
-[CAMERA] + [MECHANICAL BODY ACTION] + [OBJECT INTERACTION] + [ENVIRONMENT / LIGHTING / PARTICLES] + [DIALOGUE with colon, no quotes] + [AUDIO / VOICE] + (no subtitles, no text overlay)
-
-═══════════════════════════════════════════════
-EXAMPLE — talking-head scene
-═══════════════════════════════════════════════
-Static shot, fixed camera, vertical 9:16. He extends his right index finger toward the camera lens, leans his torso forward 10cm. His left hand rests flat on the marble surface near the herb jar. Warm overhead recessed light casts soft shadows under his jaw. He speaks clearly and slowly: the bacterium that eats your insulin and causes dangerous blood sugar spikes. Camera holds steady throughout. Male voice, clear mid-tone, deliberate pacing, no background music. (no subtitles, no text overlay)
-
-═══════════════════════════════════════════════
-EXAMPLE — preparation / POV scene
-═══════════════════════════════════════════════
-Static shot, fixed camera, vertical 9:16. His right hand picks up a pineapple peel from the glass bowl, moves it 30cm laterally and lowers it into the honey jar. His gaze follows his hand downward. Liquid in the jar ripples slightly on contact. Ambient warm overhead light, faint steam particles rising from the counter. He speaks while looking down: nine out of ten Americans have type two diabetes and less than one percent know this. Male voice, calm measured cadence, soft ambient kitchen hum. (no subtitles, no text overlay)
+const PER_SCENE_PROMPT = (
+  scenes: Array<{ dialogue: string; hasImage: boolean }>
+) => `You are generating VEO 3.1 prompts for an image-to-video pipeline. You receive a numbered sequence of scenes. Each scene has its OWN reference image attached in the same message (in order). Scene N uses the Nth image.
 
 ═══════════════════════════════════════════════
-BEFORE GENERATING — study the image
+CRITICAL RULES — VEO 3.1 best practices
 ═══════════════════════════════════════════════
-Look at the avatar's setting, available props, lighting direction. Use this only to choose believable actions and object interactions. NEVER write anything that describes what the image already shows.
+
+1. DO NOT DESCRIBE APPEARANCE. The image for each scene already provides clothes, hair, skin, age, face, setting, props. NEVER restate what it shows — your job is to describe what HAPPENS in the scene.
+2. FRONT-LOAD THE CAMERA. First clause of every prompt = camera behavior ("Static shot, fixed camera, vertical 9:16." or similar).
+3. CONCRETE MACRO ACTIONS, NOT MICRO DETAIL. Describe general body motion ("extends right hand toward jar", "leans in", "glances down"). AVOID finger positions, finger counting, or centimeter/degree measurements — Veo 3.1 Lite glitches on fine finger articulation.
+4. NO EMOTIONAL ADJECTIVES. Translate emotion into mechanics, keep it general ("speaks calmly", "expression softens").
+5. DIALOGUE WITH A COLON, NEVER QUOTES. Quotes activate the subtitle engine.
+   ✓ He speaks clearly and slowly: the bacterium that eats your insulin…
+   ✗ He says: "the bacterium that eats your insulin…"
+6. NO SUBTITLES, NO OVERLAYS. Every prompt MUST end with: (no subtitles, no text overlay)
+7. 70-100 WORDS PER SCENE.
+8. AUDIO BLOCK LAST, SEPARATED FROM VISUALS.
+9. NEVER INVENT OR EXTEND DIALOGUE. Use the provided dialogue VERBATIM after the colon. Only allowed transform: numerals to words.
+10. **EACH SCENE'S PROMPT MUST REFLECT ITS OWN IMAGE.** If scene 2's image shows the avatar in a pharmacy holding a box, scene 2's prompt describes action IN THAT CONTEXT — not in the base kitchen.
+
+STRUCTURE per scene:
+[CAMERA] + [2-3 MACRO ACTIONS grounded in that scene's image] + [SUBTLE ENVIRONMENTAL DETAIL] + [DIALOGUE with colon] + [AUDIO] + (no subtitles, no text overlay)
+
+═══════════════════════════════════════════════
+SCENES (dialogue + index of image to use)
+═══════════════════════════════════════════════
+
+${scenes
+  .map(
+    (s, i) =>
+      `Scene ${i + 1}${s.hasImage ? ` — uses Image #${i + 1}` : " — NO IMAGE (describe visually from dialogue)"}:\n"${s.dialogue}"`
+  )
+  .join("\n\n")}
 
 ═══════════════════════════════════════════════
 OUTPUT FORMAT
 ═══════════════════════════════════════════════
-Return ONLY a JSON array — no markdown fences, no commentary. Each element has this exact shape:
+
+Return ONLY a JSON array with one element per scene, in order. No markdown, no commentary.
 
 [
-  {
-    "scene": 1,
-    "dialogue": "the complete paragraph as spoken (used for bookkeeping)",
-    "prompt": "Static shot, fixed camera, vertical 9:16. [...full prose prompt ending with] (no subtitles, no text overlay)"
-  },
-  ...
-]
+  { "scene": 1, "dialogue": "<verbatim dialogue>", "prompt": "<full Veo prompt ending with (no subtitles, no text overlay)>" },
+  { "scene": 2, "dialogue": "...", "prompt": "..." }
+]`
 
-═══════════════════════════════════════════════
-SCRIPT TO PROCESS
-═══════════════════════════════════════════════
-
-${script}`
-
-// Safety net: guarantee the subtitle blocker is present at the end of every prompt.
 function enforceTextBlocker(prompt: string): string {
   const trimmed = (prompt || "").trim()
   if (/\(no subtitles,\s*no text overlay\)\s*$/i.test(trimmed)) return trimmed
-  // If there's a half-formed variant, drop it before appending the canonical form.
-  const cleaned = trimmed.replace(
-    /\(?\s*no\s+subtitles[^)]*\)?\s*$/i,
-    ""
-  ).trim()
+  const cleaned = trimmed
+    .replace(/\(?\s*no\s+subtitles[^)]*\)?\s*$/i, "")
+    .trim()
   return `${cleaned} (no subtitles, no text overlay)`
+}
+
+function stripMarkdownFences(text: string): string {
+  return text.replace(/^```json?\n?/i, "").replace(/\n?```$/i, "").trim()
+}
+
+interface PerSceneInput {
+  dialogue: string
+  imageUrl?: string | null
+}
+
+async function analyzeLegacy(script: string, imageUrl: string | null) {
+  const imageBase64 = imageUrl ? await prepareImage(imageUrl) : null
+  const promptText = LEGACY_PROMPT(script)
+  const claudeContent: any[] = []
+  const openaiContent: any[] = []
+  if (imageBase64) {
+    claudeContent.push({
+      type: "image",
+      source: {
+        type: "base64",
+        media_type: "image/jpeg",
+        data: imageBase64,
+      },
+    })
+    openaiContent.push({
+      type: "image_url",
+      image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+    })
+  }
+  claudeContent.push({ type: "text", text: promptText })
+  openaiContent.push({ type: "text", text: promptText })
+  const text = await callAIWithFallback({
+    claudeContent,
+    openaiContent,
+    maxTokens: 8000,
+  })
+  return parseScenes(text)
+}
+
+async function analyzePerScene(
+  scenes: PerSceneInput[],
+  fallbackImageUrl: string | null
+) {
+  // Fetch all images in parallel (unique URLs only, then map back)
+  const urls = scenes.map((s) => s.imageUrl || fallbackImageUrl || null)
+  const uniqueUrls = Array.from(new Set(urls.filter((u): u is string => !!u)))
+  const fetchedByUrl = new Map<string, string>()
+  await Promise.all(
+    uniqueUrls.map(async (u) => {
+      const b64 = await prepareImage(u)
+      if (b64) fetchedByUrl.set(u, b64)
+    })
+  )
+
+  const promptText = PER_SCENE_PROMPT(
+    scenes.map((s, i) => {
+      const u = urls[i]
+      return { dialogue: s.dialogue, hasImage: !!(u && fetchedByUrl.get(u)) }
+    })
+  )
+
+  const claudeContent: any[] = []
+  const openaiContent: any[] = []
+  // Attach images in scene order
+  for (const u of urls) {
+    const b64 = u ? fetchedByUrl.get(u) : null
+    if (b64) {
+      claudeContent.push({
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: "image/jpeg",
+          data: b64,
+        },
+      })
+      openaiContent.push({
+        type: "image_url",
+        image_url: { url: `data:image/jpeg;base64,${b64}` },
+      })
+    }
+  }
+  claudeContent.push({ type: "text", text: promptText })
+  openaiContent.push({ type: "text", text: promptText })
+
+  const text = await callAIWithFallback({
+    claudeContent,
+    openaiContent,
+    maxTokens: 16000,
+  })
+  return parseScenes(text)
+}
+
+function parseScenes(
+  text: string
+): Array<{ scene: number; dialogue: string; prompt: string }> {
+  const jsonStr = stripMarkdownFences(text)
+  const raw = JSON.parse(jsonStr)
+  if (!Array.isArray(raw)) throw new Error("Resposta não é uma lista")
+  return raw.map((s: any, idx: number) => ({
+    scene: s.scene ?? idx + 1,
+    dialogue: typeof s.dialogue === "string" ? s.dialogue : "",
+    prompt: enforceTextBlocker(
+      typeof s.prompt === "string" ? s.prompt : JSON.stringify(s.prompt)
+    ),
+  }))
 }
 
 export async function POST(req: NextRequest) {
@@ -90,68 +207,43 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     )
 
-  const { script, imageUrl } = await req.json()
-  if (!script)
-    return NextResponse.json(
-      { error: "Script é obrigatório" },
-      { status: 400 }
-    )
+  const body = await req.json()
 
   try {
-    const imageBase64 = await prepareImage(imageUrl)
-    const promptText = PROMPT_TEMPLATE(script)
+    // New per-scene flow: body has { scenes: [{dialogue, imageUrl}], fallbackImageUrl? }
+    if (Array.isArray(body.scenes)) {
+      const scenes: PerSceneInput[] = body.scenes
+      const fallbackImageUrl = body.fallbackImageUrl ?? null
 
-    const claudeContent: any[] = []
-    if (imageBase64) {
-      claudeContent.push({
-        type: "image",
-        source: {
-          type: "base64",
-          media_type: "image/jpeg",
-          data: imageBase64,
-        },
-      })
+      if (scenes.length === 0) {
+        return NextResponse.json({ scenes: [] })
+      }
+
+      // Batch if too many — LLM context + attachment cap
+      const batches: PerSceneInput[][] = []
+      for (let i = 0; i < scenes.length; i += MAX_SCENES_PER_BATCH) {
+        batches.push(scenes.slice(i, i + MAX_SCENES_PER_BATCH))
+      }
+
+      const out: Array<{ scene: number; dialogue: string; prompt: string }> = []
+      for (const batch of batches) {
+        const result = await analyzePerScene(batch, fallbackImageUrl)
+        for (const r of result) {
+          out.push({ ...r, scene: out.length + 1 })
+        }
+      }
+      return NextResponse.json({ scenes: out })
     }
-    claudeContent.push({ type: "text", text: promptText })
 
-    const openaiContent: any[] = []
-    if (imageBase64) {
-      openaiContent.push({
-        type: "image_url",
-        image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
-      })
-    }
-    openaiContent.push({ type: "text", text: promptText })
-
-    const text = await callAIWithFallback({
-      claudeContent,
-      openaiContent,
-      maxTokens: 8000,
-    })
-
-    let rawScenes: any[]
-    try {
-      const jsonStr = text
-        .replace(/^```json?\n?/i, "")
-        .replace(/\n?```$/i, "")
-        .trim()
-      rawScenes = JSON.parse(jsonStr)
-    } catch {
+    // Legacy: body has { script, imageUrl }
+    const { script, imageUrl } = body
+    if (!script)
       return NextResponse.json(
-        { error: "Falha ao interpretar resposta da IA", raw: text },
-        { status: 500 }
+        { error: "Script é obrigatório" },
+        { status: 400 }
       )
-    }
-
-    const scenes = rawScenes.map((s) => ({
-      scene: s.scene,
-      dialogue: s.dialogue,
-      prompt: enforceTextBlocker(
-        typeof s.prompt === "string" ? s.prompt : JSON.stringify(s.prompt)
-      ),
-    }))
-
-    return NextResponse.json({ scenes })
+    const result = await analyzeLegacy(script, imageUrl ?? null)
+    return NextResponse.json({ scenes: result })
   } catch (err: any) {
     console.error("[analyze-script]", err.message)
     return NextResponse.json({ error: err.message }, { status: 500 })

@@ -192,12 +192,12 @@ export function AddClipDialog({
                   <p className="text-foreground text-sm font-medium">
                     Analisando fala
                   </p>
-                  <p className="text-muted-foreground max-w-[280px] text-[11px] leading-relaxed">
+                  <p className="text-muted-foreground max-w-[280px] text-xs leading-relaxed">
                     Claude está lendo a imagem e gerando o prompt estruturado
                     VEO 3.1.
                   </p>
                 </div>
-                <div className="text-muted-foreground flex items-center gap-2 font-mono text-[10px]">
+                <div className="text-muted-foreground flex items-center gap-2 font-mono text-[11px]">
                   <RiLoader4Line className="size-3 animate-spin" />
                   <span>Isso pode levar 15-30 segundos</span>
                 </div>
@@ -232,10 +232,10 @@ export function AddClipDialog({
                     id="prompt"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    className="h-[220px] max-h-[220px] resize-none overflow-y-auto font-mono !text-[11px] leading-relaxed [field-sizing:fixed]"
+                    className="h-[220px] max-h-[220px] resize-none overflow-y-auto font-mono !text-xs leading-relaxed [field-sizing:fixed]"
                   />
                   {dialogue.trim() && (
-                    <p className="text-muted-foreground text-[10px]">
+                    <p className="text-muted-foreground text-[11px]">
                       Fala original preservada · {dialogue.trim().length} chars
                     </p>
                   )}
@@ -264,7 +264,7 @@ export function AddClipDialog({
                     autoFocus
                   />
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-muted-foreground text-[10px]">
+                    <p className="text-muted-foreground text-[11px]">
                       Digite a fala natural — a IA gera o prompt VEO 3.1
                       estruturado a partir dela e da imagem.
                     </p>
@@ -390,7 +390,7 @@ function UploadArea({
             <div className="border-primary/20 border-t-primary size-8 animate-spin rounded-full border-2" />
             <div className="bg-primary absolute inset-0 m-auto size-2 animate-ping rounded-full" />
           </div>
-          <p className="text-muted-foreground font-mono text-[10px]">
+          <p className="text-muted-foreground font-mono text-[11px]">
             Enviando…
           </p>
         </div>
@@ -410,7 +410,7 @@ function UploadArea({
       ) : url ? (
         <div className="animate-in fade-in zoom-in-95 flex flex-col items-center gap-1.5 duration-300">
           <RiCheckLine className="text-primary size-4" />
-          <p className="text-foreground truncate text-[11px]">
+          <p className="text-foreground truncate text-xs">
             {filename || "Enviado"}
           </p>
         </div>
@@ -419,7 +419,7 @@ function UploadArea({
           {icon || (
             <RiUploadCloud2Line className="text-muted-foreground/60 size-5" />
           )}
-          <p className="text-muted-foreground text-[11px]">{label}</p>
+          <p className="text-muted-foreground text-xs">{label}</p>
         </>
       )}
       <input

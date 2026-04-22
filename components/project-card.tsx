@@ -70,13 +70,13 @@ export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
           <p className="text-foreground group-hover:text-primary truncate text-[13px] font-medium tracking-tight transition-colors">
             {project.name}
           </p>
-          <span className="text-muted-foreground flex-shrink-0 font-mono text-[11px]">
+          <span className="text-muted-foreground flex-shrink-0 font-mono text-xs">
             {date}
           </span>
         </div>
 
         {/* Subtle meta line */}
-        <div className="text-muted-foreground mt-1 flex items-center gap-1.5 font-mono text-[10px]">
+        <div className="text-muted-foreground mt-1 flex items-center gap-1.5 font-mono text-[11px]">
           <span
             className={cn("inline-block size-1.5 rounded-full", statusColor)}
           />
