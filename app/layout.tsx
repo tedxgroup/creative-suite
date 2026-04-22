@@ -7,10 +7,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
-const fontSans = Geist({
-  subsets: ["latin"],
-  variable: "--font-sans",
-})
+const geist = Geist({subsets:['latin'],variable:'--font-sans'})
 
 const fontMono = JetBrains_Mono({
   subsets: ["latin"],
@@ -31,7 +28,7 @@ export default function RootLayout({
     <html
       lang="pt-BR"
       suppressHydrationWarning
-      className={cn("antialiased", fontSans.variable, "font-mono", fontMono.variable)}
+      className={cn("antialiased", fontMono.variable, "font-sans", geist.variable)}
     >
       <body>
         <ThemeProvider>

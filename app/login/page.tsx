@@ -104,7 +104,7 @@ function LoginForm() {
           </Button>
         </div>
 
-        <p className="text-muted-foreground text-center font-mono text-[10px]">
+        <p className="text-muted-foreground text-center font-mono text-[11px]">
           Acesso restrito — usuários cadastrados no Supabase
         </p>
       </CardContent>

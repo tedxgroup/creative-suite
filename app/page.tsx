@@ -23,7 +23,7 @@ export default function ProjectsPage() {
       {/* Header */}
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-muted-foreground mb-1 font-mono text-[11px] tracking-tight">
+          <p className="text-muted-foreground mb-1 font-mono text-xs tracking-tight">
             /projetos
           </p>
           <h1 className="font-heading text-foreground text-2xl leading-none font-semibold tracking-tight">
@@ -40,7 +40,7 @@ export default function ProjectsPage() {
       {isLoading && (
         <div className="grid grid-cols-1 gap-x-5 gap-y-7 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {[...Array(8)].map((_, i) => (
-            <Skeleton key={i} className="aspect-video rounded-none" />
+            <Skeleton key={i} className="aspect-video rounded-md" />
           ))}
         </div>
       )}

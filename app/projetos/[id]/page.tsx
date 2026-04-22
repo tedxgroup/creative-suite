@@ -251,10 +251,10 @@ export default function ProjectDetailPage() {
   if (isLoading) {
     return (
       <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-6 py-6 sm:px-10 sm:py-8 lg:px-16">
-        <Skeleton className="h-8 w-64 rounded-none" />
-        <Skeleton className="h-12 w-full rounded-none" />
+        <Skeleton className="h-8 w-64 rounded-md" />
+        <Skeleton className="h-12 w-full rounded-md" />
         {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full rounded-none" />
+          <Skeleton key={i} className="h-16 w-full rounded-md" />
         ))}
       </div>
     )
@@ -300,7 +300,7 @@ export default function ProjectDetailPage() {
           {hasActive && (
             <Badge
               variant="outline"
-              className="h-7 gap-1.5 rounded-none border-emerald-500/30 bg-emerald-500/10 px-2 font-mono text-[10px] text-emerald-600 dark:text-emerald-400"
+              className="h-7 gap-1.5 rounded-md border-emerald-500/30 bg-emerald-500/10 px-2 font-mono text-[11px] text-emerald-600 dark:text-emerald-400"
             >
               <RiLoader4Line className="size-3 animate-spin" />
               Monitorando
@@ -443,6 +443,7 @@ export default function ProjectDetailPage() {
         open={bulkOpen}
         onOpenChange={setBulkOpen}
         onCreated={() => mutateProject()}
+        initialDraft={project.sceneDraft ?? null}
       />
 
       <PreviewClipDialog
@@ -467,7 +468,7 @@ function SummaryPill({
   return (
     <div
       className={cn(
-        "ring-foreground/10 inline-flex items-center gap-1.5 px-2.5 py-1 ring-1 font-mono text-[11px]",
+        "ring-foreground/10 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 ring-1 font-mono text-xs",
         accent === "primary" && "ring-primary/40 bg-primary/5"
       )}
     >
