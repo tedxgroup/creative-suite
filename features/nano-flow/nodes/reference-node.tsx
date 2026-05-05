@@ -4,14 +4,14 @@ import * as React from "react"
 import Image from "next/image"
 import { Handle, Position, type NodeProps } from "@xyflow/react"
 import {
-  RiBookmarkLine,
-  RiDeleteBinLine,
-  RiFolderImageLine,
-  RiImageEditLine,
-  RiLoader4Line,
-  RiUploadCloud2Line,
-  RiUserSmileLine,
-} from "@remixicon/react"
+  Bookmark,
+  Trash2,
+  Images,
+  Pencil,
+  Loader2,
+  UploadCloud,
+  Smile,
+} from "lucide-react"
 import { toast } from "sonner"
 import {
   ContextMenu,
@@ -28,8 +28,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { GalleryPicker } from "@/features/gallery/components/gallery-picker"
+import { supabaseBrowser } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 import { useFlowStore } from "../store"
+
+const STORAGE_BUCKET =
+  process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || "assets"
 import {
   REFERENCE_TAGS,
   type FlowNode,
@@ -94,12 +98,35 @@ export function ReferenceNode(props: NodeProps<FlowNode>) {
     }
     setUploading(true)
     try {
-      const fd = new FormData()
-      fd.append("file", file)
-      const res = await fetch("/api/flows/upload", { method: "POST", body: fd })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error || "Falha no upload")
-      updateNodeData(id, { imageUrl: json.url })
+      const signRes = await fetch("/api/flows/upload/sign", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ filename: file.name }),
+      })
+      const signJson = await signRes.json()
+      if (!signRes.ok) throw new Error(signJson.error || "Falha ao assinar upload")
+
+      const { error: upErr } = await supabaseBrowser.storage
+        .from(STORAGE_BUCKET)
+        .uploadToSignedUrl(signJson.key, signJson.token, file, {
+          contentType: file.type || "application/octet-stream",
+          upsert: false,
+        })
+      if (upErr) throw new Error(upErr.message)
+
+      const commitRes = await fetch("/api/flows/upload/commit", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          key: signJson.key,
+          mimeType: file.type,
+          sizeBytes: file.size,
+        }),
+      })
+      const commitJson = await commitRes.json()
+      if (!commitRes.ok) throw new Error(commitJson.error || "Falha no commit")
+
+      updateNodeData(id, { imageUrl: commitJson.url })
     } catch (err: any) {
       toast.error(err.message)
     } finally {
@@ -121,7 +148,7 @@ export function ReferenceNode(props: NodeProps<FlowNode>) {
       />
 
       <div className="flex items-center gap-1.5 px-1">
-        <RiUserSmileLine className="text-muted-foreground size-3" />
+        <Smile className="text-muted-foreground size-3" />
         <span className="text-muted-foreground text-xs font-medium">
           Referência #{index}
         </span>
@@ -130,7 +157,7 @@ export function ReferenceNode(props: NodeProps<FlowNode>) {
           className="text-muted-foreground hover:text-destructive ml-auto opacity-0 transition-opacity group-hover/node:opacity-100"
           aria-label="Remover referência"
         >
-          <RiDeleteBinLine className="size-3" />
+          <Trash2 className="size-3" />
         </button>
       </div>
 
@@ -176,14 +203,14 @@ export function ReferenceNode(props: NodeProps<FlowNode>) {
             )}
           >
             {uploading ? (
-              <RiLoader4Line className="size-5 animate-spin" />
+              <Loader2 className="size-5 animate-spin" />
             ) : (
               <>
                 <button
                   onClick={() => inputRef.current?.click()}
                   className="hover:bg-muted/60 flex flex-col items-center gap-1 rounded-md px-2 py-1.5 transition-colors"
                 >
-                  <RiUploadCloud2Line className="size-4" />
+                  <UploadCloud className="size-4" />
                   <span className="text-[11px]">Upload</span>
                 </button>
                 <span className="text-muted-foreground/60 text-[10px]">ou</span>
@@ -191,7 +218,7 @@ export function ReferenceNode(props: NodeProps<FlowNode>) {
                   onClick={() => setPickerOpen(true)}
                   className="hover:bg-muted/60 flex flex-col items-center gap-1 rounded-md px-2 py-1.5 transition-colors"
                 >
-                  <RiFolderImageLine className="size-4" />
+                  <Images className="size-4" />
                   <span className="text-[11px]">Galeria</span>
                 </button>
               </>
@@ -242,11 +269,11 @@ export function ReferenceNode(props: NodeProps<FlowNode>) {
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         <ContextMenuItem onSelect={saveToGallery} disabled={!data.imageUrl}>
-          <RiBookmarkLine className="size-3.5" />
+          <Bookmark className="size-3.5" />
           Salvar na galeria
         </ContextMenuItem>
         <ContextMenuItem onSelect={() => inputRef.current?.click()}>
-          <RiImageEditLine className="size-3.5" />
+          <Pencil className="size-3.5" />
           {data.imageUrl ? "Trocar imagem" : "Enviar imagem"}
         </ContextMenuItem>
         <ContextMenuSeparator />
@@ -254,7 +281,7 @@ export function ReferenceNode(props: NodeProps<FlowNode>) {
           onSelect={() => deleteNode(id)}
           className="text-destructive focus:text-destructive"
         >
-          <RiDeleteBinLine className="size-3.5" />
+          <Trash2 className="size-3.5" />
           Remover
         </ContextMenuItem>
       </ContextMenuContent>

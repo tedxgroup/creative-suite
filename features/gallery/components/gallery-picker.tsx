@@ -3,7 +3,7 @@
 import * as React from "react"
 import Image from "next/image"
 import useSWR from "swr"
-import { RiSearchLine } from "@remixicon/react"
+import { Search } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -69,7 +69,7 @@ export function GalleryPicker({ open, onOpenChange, onPick }: GalleryPickerProps
             </TabsList>
           </Tabs>
           <div className="relative ml-auto">
-            <RiSearchLine className="text-muted-foreground pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2" />
+            <Search className="text-muted-foreground pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}

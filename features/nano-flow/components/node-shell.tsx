@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { RiCloseLine } from "@remixicon/react"
+import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useFlowStore } from "../store"
@@ -55,7 +55,7 @@ export function NodeShell({
             className="text-muted-foreground hover:text-foreground size-5"
             aria-label="Remover nó"
           >
-            <RiCloseLine className="size-3" />
+            <X className="size-3" />
           </Button>
         </div>
       </div>

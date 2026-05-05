@@ -3,17 +3,17 @@
 import * as React from "react"
 import { toast } from "sonner"
 import {
-  RiAddLine,
-  RiArrowLeftLine,
-  RiCheckLine,
-  RiCloseLine,
-  RiFolderImageLine,
-  RiImageEditLine,
-  RiLoader4Line,
-  RiRefreshLine,
-  RiSparkling2Line,
-  RiUploadCloud2Line,
-} from "@remixicon/react"
+  Plus,
+  ArrowLeft,
+  Check,
+  X,
+  Images,
+  Pencil,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+  UploadCloud,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -84,6 +84,14 @@ export function BulkScenesDialog({
   const draftTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
   const hydratedRef = React.useRef(false)
 
+  // Multi-select for bulk image change
+  const [selectedIds, setSelectedIds] = React.useState<Set<number>>(new Set())
+  const lastClickedIndexRef = React.useRef<number | null>(null)
+  const [bulkTarget, setBulkTarget] = React.useState<
+    null | "gallery" | "flow"
+  >(null)
+  const bulkUploadRef = React.useRef<HTMLInputElement>(null)
+
   React.useEffect(() => {
     if (open) {
       hydratedRef.current = true
@@ -105,6 +113,8 @@ export function BulkScenesDialog({
       }
       setUploadingImage(false)
       setDraftStatus("idle")
+      setSelectedIds(new Set())
+      lastClickedIndexRef.current = null
     } else {
       hydratedRef.current = false
       if (draftTimerRef.current) {
@@ -280,30 +290,101 @@ export function BulkScenesDialog({
 
   function openFlowForScene(sceneId: number) {
     setPickerForSceneId(sceneId)
+    setBulkTarget(null)
     setFlowPickerOpen(true)
   }
 
   function openGalleryForScene(sceneId: number) {
     setPickerForSceneId(sceneId)
+    setBulkTarget(null)
     setGalleryPickerOpen(true)
   }
 
   function handleFlowPick(url: string) {
-    if (pickerForSceneId !== null) {
+    if (bulkTarget === "flow" && selectedIds.size > 0) {
+      applyImageToSelected(url)
+      toast.success(`Imagem aplicada a ${selectedIds.size} cena(s)`)
+    } else if (pickerForSceneId !== null) {
       updateScene(pickerForSceneId, { imageUrl: url })
       toast.success("Imagem definida como padrão")
     }
     setFlowPickerOpen(false)
     setPickerForSceneId(null)
+    setBulkTarget(null)
   }
 
   function handleGalleryPick(url: string) {
-    if (pickerForSceneId !== null) {
+    if (bulkTarget === "gallery" && selectedIds.size > 0) {
+      applyImageToSelected(url)
+      toast.success(`Imagem aplicada a ${selectedIds.size} cena(s)`)
+    } else if (pickerForSceneId !== null) {
       updateScene(pickerForSceneId, { imageUrl: url })
       toast.success("Imagem da galeria aplicada")
     }
     setGalleryPickerOpen(false)
     setPickerForSceneId(null)
+    setBulkTarget(null)
+  }
+
+  // ── Multi-select helpers ────────────────────────────────────────────────
+  function toggleSelection(sceneId: number, index: number, shift: boolean) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      const anchor = lastClickedIndexRef.current
+      if (shift && anchor !== null && anchor !== index) {
+        const [lo, hi] = anchor < index ? [anchor, index] : [index, anchor]
+        for (let i = lo; i <= hi; i++) {
+          const s = scenes[i]
+          if (s) next.add(s.id)
+        }
+      } else {
+        if (next.has(sceneId)) next.delete(sceneId)
+        else next.add(sceneId)
+      }
+      return next
+    })
+    lastClickedIndexRef.current = index
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set())
+    lastClickedIndexRef.current = null
+  }
+
+  function applyImageToSelected(url: string | null) {
+    if (selectedIds.size === 0) return
+    setScenes((prev) =>
+      prev.map((s) => (selectedIds.has(s.id) ? { ...s, imageUrl: url } : s))
+    )
+  }
+
+  async function handleBulkUpload(file: File) {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Somente imagens")
+      return
+    }
+    if (selectedIds.size === 0) return
+    try {
+      const { url } = await uploadDirect(file, "image")
+      applyImageToSelected(url)
+      toast.success(`Imagem aplicada a ${selectedIds.size} cena(s)`)
+    } catch (err: any) {
+      toast.error(err.message || "Falha no upload")
+    }
+  }
+
+  function openGalleryForSelection() {
+    if (selectedIds.size === 0) return
+    setPickerForSceneId(null)
+    setBulkTarget("gallery")
+    setGalleryPickerOpen(true)
+  }
+
+  function openFlowForSelection() {
+    if (selectedIds.size === 0) return
+    setPickerForSceneId(null)
+    setBulkTarget("flow")
+    setFlowPickerOpen(true)
   }
 
   async function handleSceneUpload(sceneId: number, file: File) {
@@ -372,7 +453,7 @@ export function BulkScenesDialog({
             <div className="flex flex-1 flex-col items-center justify-center gap-5 py-20 text-center">
               <div className="relative">
                 <div className="border-primary/20 border-t-primary size-12 animate-spin rounded-full border-2" />
-                <RiSparkling2Line className="text-primary absolute inset-0 m-auto size-5 animate-pulse" />
+                <Sparkles className="text-primary absolute inset-0 m-auto size-5 animate-pulse" />
               </div>
               <div className="space-y-1.5">
                 <p className="text-foreground text-sm font-medium">
@@ -446,7 +527,7 @@ export function BulkScenesDialog({
                       />
                     ) : (
                       <>
-                        <RiUploadCloud2Line className="text-muted-foreground/60 size-5" />
+                        <UploadCloud className="text-muted-foreground/60 size-5" />
                         <p className="text-muted-foreground text-xs">
                           Enviar imagem
                         </p>
@@ -478,7 +559,7 @@ export function BulkScenesDialog({
                 <div />
                 <div className="flex items-center gap-2">
                   <Button onClick={splitScenes}>
-                    <RiCheckLine className="size-4" />
+                    <Check className="size-4" />
                     Dividir cenas
                   </Button>
                   <p className="text-muted-foreground text-[11px]">
@@ -500,7 +581,7 @@ export function BulkScenesDialog({
                   className="text-muted-foreground -ml-2"
                   onClick={backToEdit}
                 >
-                  <RiArrowLeftLine className="size-3.5" />
+                  <ArrowLeft className="size-3.5" />
                   Voltar
                 </Button>
                 {allHavePrompt && (
@@ -512,7 +593,7 @@ export function BulkScenesDialog({
                     disabled={analyzing}
                     title="Reanalisar todas as cenas com IA"
                   >
-                    <RiSparkling2Line className="size-3.5" />
+                    <Sparkles className="size-3.5" />
                     Reanalisar
                   </Button>
                 )}
@@ -521,11 +602,75 @@ export function BulkScenesDialog({
                     {scenes.length} {scenes.length === 1 ? "cena" : "cenas"}
                   </Badge>
                   <Button size="sm" variant="secondary" onClick={addScene}>
-                    <RiAddLine className="size-3.5" />
+                    <Plus className="size-3.5" />
                     Cena
                   </Button>
                 </div>
               </div>
+              {selectedIds.size > 0 && (
+                <div className="bg-primary/5 border-primary/30 flex items-center gap-2 rounded-md border px-3 py-2">
+                  <Badge
+                    variant="outline"
+                    className="border-primary/40 text-primary rounded-md font-mono"
+                  >
+                    {selectedIds.size} selecionada
+                    {selectedIds.size === 1 ? "" : "s"}
+                  </Badge>
+                  <span className="text-muted-foreground text-[11px]">
+                    Aplicar imagem em lote:
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => bulkUploadRef.current?.click()}
+                  >
+                    <UploadCloud className="size-3.5" />
+                    Upload
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={openGalleryForSelection}
+                  >
+                    <Images className="size-3.5" />
+                    Galeria
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      applyImageToSelected(null)
+                      toast.success(
+                        `${selectedIds.size} cena(s) voltaram ao avatar base`
+                      )
+                    }}
+                    className="text-muted-foreground"
+                  >
+                    <RefreshCw className="size-3.5" />
+                    Resetar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={clearSelection}
+                    className="text-muted-foreground ml-auto"
+                  >
+                    <X className="size-3.5" />
+                    Limpar
+                  </Button>
+                </div>
+              )}
+              <input
+                ref={bulkUploadRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) handleBulkUpload(f)
+                  e.target.value = ""
+                }}
+              />
               <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
                 <div className="space-y-1.5">
                   {scenes.map((scene, i) => (
@@ -534,6 +679,10 @@ export function BulkScenesDialog({
                       index={i}
                       scene={scene}
                       baseImageUrl={imageUrl}
+                      selected={selectedIds.has(scene.id)}
+                      onToggleSelect={(shift) =>
+                        toggleSelection(scene.id, i, shift)
+                      }
                       onUpdate={(patch) => updateScene(scene.id, patch)}
                       onRemove={() => removeScene(scene.id)}
                       onOpenFlow={() => openFlowForScene(scene.id)}
@@ -553,7 +702,7 @@ export function BulkScenesDialog({
               </Button>
               {hasScenes && !allHavePrompt ? (
                 <Button onClick={analyzeWithAI} disabled={analyzing}>
-                  <RiSparkling2Line className="size-4" />
+                  <Sparkles className="size-4" />
                   Analisar com IA
                 </Button>
               ) : (
@@ -561,7 +710,7 @@ export function BulkScenesDialog({
                   onClick={submit}
                   disabled={submitting || !hasScenes || !allHavePrompt}
                 >
-                  <RiCheckLine className="size-4" />
+                  <Check className="size-4" />
                   {submitting ? "Criando..." : "Criar todas as cenas"}
                 </Button>
               )}
@@ -597,6 +746,8 @@ interface SceneRowProps {
   index: number
   scene: Scene
   baseImageUrl: string | null
+  selected: boolean
+  onToggleSelect: (shift: boolean) => void
   onUpdate: (patch: Partial<Scene>) => void
   onRemove: () => void
   onOpenFlow: () => void
@@ -615,6 +766,8 @@ function SceneRow({
   index,
   scene,
   baseImageUrl,
+  selected,
+  onToggleSelect,
   onUpdate,
   onRemove,
   onOpenFlow,
@@ -661,40 +814,56 @@ function SceneRow({
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div
+            onClick={(e) => onToggleSelect(e.shiftKey)}
             className={cn(
-              "relative my-2.5 aspect-[9/16] w-[72px] shrink-0 cursor-context-menu overflow-hidden rounded-md ring-1 transition-all",
-              isCustom
-                ? "ring-primary/70 shadow-[0_0_0_1px_var(--primary)]"
-                : "ring-foreground/15 group-hover/scene:ring-foreground/30"
+              "relative my-2.5 aspect-[9/16] w-[72px] shrink-0 cursor-pointer overflow-hidden rounded-md ring-1 transition-all select-none",
+              selected
+                ? "ring-primary shadow-[0_0_0_2px_var(--primary)]"
+                : isCustom
+                  ? "ring-primary/70 shadow-[0_0_0_1px_var(--primary)]"
+                  : "ring-foreground/15 group-hover/scene:ring-foreground/30"
             )}
-            title="Clique com o botão direito pra editar"
+            title="Clique pra selecionar (shift+clique pra intervalo) · Clique direito pra editar"
           >
             {thumbUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={thumbUrl} alt="" className="size-full object-cover" />
+              <img
+                src={thumbUrl}
+                alt=""
+                className={cn(
+                  "size-full object-cover transition-opacity",
+                  selected && "opacity-60"
+                )}
+                draggable={false}
+              />
             ) : (
               <div className="bg-muted/60 text-muted-foreground flex size-full items-center justify-center">
-                <RiImageEditLine className="size-4" />
+                <Pencil className="size-4" />
               </div>
             )}
-            {isCustom && (
+            {selected && (
+              <div className="bg-primary text-primary-foreground absolute left-1 top-1 flex size-4 items-center justify-center rounded-md font-mono">
+                <Check className="size-2.5" />
+              </div>
+            )}
+            {isCustom && !selected && (
               <div className="bg-primary text-primary-foreground absolute right-1 top-1 flex size-4 items-center justify-center rounded-md font-mono">
-                <RiCheckLine className="size-2.5" />
+                <Check className="size-2.5" />
               </div>
             )}
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent className="w-52">
           <ContextMenuItem onSelect={() => fileInputRef.current?.click()}>
-            <RiUploadCloud2Line className="size-3.5" />
+            <UploadCloud className="size-3.5" />
             Fazer upload de imagem
           </ContextMenuItem>
           <ContextMenuItem onSelect={onOpenGallery}>
-            <RiFolderImageLine className="size-3.5" />
+            <Images className="size-3.5" />
             Carregar imagem da galeria
           </ContextMenuItem>
           <ContextMenuItem onSelect={onOpenFlow}>
-            <RiImageEditLine className="size-3.5" />
+            <Pencil className="size-3.5" />
             Customizar no Nano Flow
           </ContextMenuItem>
           {isCustom && (
@@ -702,7 +871,7 @@ function SceneRow({
               onSelect={() => onUpdate({ imageUrl: null })}
               className="text-muted-foreground"
             >
-              <RiRefreshLine className="size-3.5" />
+              <RefreshCw className="size-3.5" />
               Voltar pro avatar base
             </ContextMenuItem>
           )}
@@ -762,7 +931,7 @@ function SceneRow({
 
           {isCustom && (
             <span className="text-primary flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide">
-              <RiCheckLine className="size-2.5" />
+              <Check className="size-2.5" />
               Imagem custom
             </span>
           )}
@@ -787,7 +956,7 @@ function SceneRow({
           onClick={onRemove}
           aria-label={`Remover cena ${index + 1}`}
         >
-          <RiCloseLine className="size-3.5" />
+          <X className="size-3.5" />
         </Button>
       </div>
     </div>

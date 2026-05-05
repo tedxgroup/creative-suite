@@ -6,16 +6,16 @@ import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { useRouter } from "next/navigation"
 import {
-  RiVideoLine,
-  RiVoiceprintLine,
-  RiImageLine,
-  RiSettings3Line,
-  RiSunLine,
-  RiMoonLine,
-  RiMenuLine,
-  RiLogoutBoxLine,
-  RiFolderImageLine,
-} from "@remixicon/react"
+  Video,
+  AudioLines,
+  ImageIcon,
+  Settings,
+  Sun,
+  Moon,
+  Menu,
+  LogOut,
+  Images,
+} from "lucide-react"
 import { supabaseBrowser } from "@/lib/supabase/client"
 import {
   NavigationMenu,
@@ -35,10 +35,10 @@ import {
 import { cn } from "@/lib/utils"
 
 const tabs = [
-  { id: "videos", label: "Vídeos", href: "/", icon: RiVideoLine },
-  { id: "vozes", label: "Vozes", href: "/vozes", icon: RiVoiceprintLine },
-  { id: "imagens", label: "Imagens", href: "/imagens", icon: RiImageLine },
-  { id: "galeria", label: "Galeria", href: "/galeria", icon: RiFolderImageLine },
+  { id: "videos", label: "Vídeos", href: "/", icon: Video },
+  { id: "vozes", label: "Vozes", href: "/vozes", icon: AudioLines },
+  { id: "imagens", label: "Imagens", href: "/imagens", icon: ImageIcon },
+  { id: "galeria", label: "Galeria", href: "/galeria", icon: Images },
 ]
 
 function isActive(href: string, pathname: string): boolean {
@@ -115,7 +115,7 @@ export function TopNav() {
           className="text-muted-foreground hover:text-foreground size-8"
         >
           <Link href="/configuracoes" aria-label="Configurações">
-            <RiSettings3Line className="size-4" />
+            <Settings className="size-4" />
           </Link>
         </Button>
         <Button
@@ -129,9 +129,9 @@ export function TopNav() {
         >
           {mounted &&
             (resolvedTheme === "dark" ? (
-              <RiSunLine className="size-4" />
+              <Sun className="size-4" />
             ) : (
-              <RiMoonLine className="size-4" />
+              <Moon className="size-4" />
             ))}
         </Button>
         <Button
@@ -142,7 +142,7 @@ export function TopNav() {
           aria-label="Sair"
           title="Sair"
         >
-          <RiLogoutBoxLine className="size-4" />
+          <LogOut className="size-4" />
         </Button>
 
         <DropdownMenu>
@@ -152,7 +152,7 @@ export function TopNav() {
               size="icon"
               className="text-muted-foreground hover:text-foreground size-8"
             >
-              <RiMenuLine className="size-4" />
+              <Menu className="size-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">

@@ -3,11 +3,11 @@
 import * as React from "react"
 import { toast } from "sonner"
 import {
-  RiArrowLeftSLine,
-  RiArrowRightSLine,
-  RiCloseLine,
-  RiSendPlaneFill,
-} from "@remixicon/react"
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Send,
+} from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -157,7 +157,7 @@ export function PreviewClipDialog({
                   }
                   disabled={!hasPrev}
                 >
-                  <RiArrowLeftSLine className="size-3.5" />
+                  <ChevronLeft className="size-3.5" />
                 </Button>
                 <span className="px-1.5 font-mono text-[11px] text-white/85">
                   {String(clip.order).padStart(2, "0")} /{" "}
@@ -172,7 +172,7 @@ export function PreviewClipDialog({
                   }
                   disabled={!hasNext}
                 >
-                  <RiArrowRightSLine className="size-3.5" />
+                  <ChevronRight className="size-3.5" />
                 </Button>
               </div>
             </div>
@@ -189,7 +189,7 @@ export function PreviewClipDialog({
                   className="size-6"
                   onClick={() => onOpenChange(null)}
                 >
-                  <RiCloseLine className="size-4" />
+                  <X className="size-4" />
                 </Button>
               </div>
 
@@ -250,7 +250,7 @@ export function PreviewClipDialog({
                       onClick={sendMessage}
                       disabled={sending || !chatInput.trim()}
                     >
-                      <RiSendPlaneFill className="size-3.5" />
+                      <Send className="size-3.5" />
                     </Button>
                   </div>
                 </div>

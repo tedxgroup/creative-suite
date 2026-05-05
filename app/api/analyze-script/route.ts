@@ -6,7 +6,7 @@ import { ANTHROPIC_API_KEY, OPENAI_API_KEY } from "@/lib/env"
 export const dynamic = "force-dynamic"
 export const maxDuration = 180
 
-const MAX_SCENES_PER_BATCH = 10
+const PER_SCENE_CONCURRENCY = 5
 
 const LEGACY_PROMPT = (script: string) => `You are generating VEO 3.1 prompts for an image-to-video pipeline. Each paragraph of the script below (separated by blank lines) is ONE scene. Do NOT split, merge, or reorder paragraphs.
 
@@ -39,51 +39,42 @@ Return ONLY a JSON array:
 SCRIPT
 ${script}`
 
-const PER_SCENE_PROMPT = (
-  scenes: Array<{ dialogue: string; hasImage: boolean }>
-) => `You are generating VEO 3.1 prompts for an image-to-video pipeline. You receive a numbered sequence of scenes. Each scene has its OWN reference image attached in the same message (in order). Scene N uses the Nth image.
+const SINGLE_SCENE_PROMPT = (
+  dialogue: string,
+  hasImage: boolean
+) => `You are generating ONE VEO 3.1 prompt for an image-to-video pipeline. You receive ${hasImage ? "ONE reference image attached to this message" : "NO reference image — describe visually from the dialogue alone"} and ONE scene's dialogue.
 
 ═══════════════════════════════════════════════
 CRITICAL RULES — VEO 3.1 best practices
 ═══════════════════════════════════════════════
 
-1. DO NOT DESCRIBE APPEARANCE. The image for each scene already provides clothes, hair, skin, age, face, setting, props. NEVER restate what it shows — your job is to describe what HAPPENS in the scene.
-2. FRONT-LOAD THE CAMERA. First clause of every prompt = camera behavior ("Static shot, fixed camera, vertical 9:16." or similar).
+1. DO NOT DESCRIBE APPEARANCE. The reference image already provides clothes, hair, skin, age, face, setting, props. NEVER restate what it shows — your job is to describe what HAPPENS in the scene.
+2. FRONT-LOAD THE CAMERA. First clause = camera behavior ("Static shot, fixed camera, vertical 9:16." or similar).
 3. CONCRETE MACRO ACTIONS, NOT MICRO DETAIL. Describe general body motion ("extends right hand toward jar", "leans in", "glances down"). AVOID finger positions, finger counting, or centimeter/degree measurements — Veo 3.1 Lite glitches on fine finger articulation.
 4. NO EMOTIONAL ADJECTIVES. Translate emotion into mechanics, keep it general ("speaks calmly", "expression softens").
 5. DIALOGUE WITH A COLON, NEVER QUOTES. Quotes activate the subtitle engine.
    ✓ He speaks clearly and slowly: the bacterium that eats your insulin…
    ✗ He says: "the bacterium that eats your insulin…"
-6. NO SUBTITLES, NO OVERLAYS. Every prompt MUST end with: (no subtitles, no text overlay)
-7. 70-100 WORDS PER SCENE.
+6. NO SUBTITLES, NO OVERLAYS. The prompt MUST end with: (no subtitles, no text overlay)
+7. 70-100 WORDS.
 8. AUDIO BLOCK LAST, SEPARATED FROM VISUALS.
 9. NEVER INVENT OR EXTEND DIALOGUE. Use the provided dialogue VERBATIM after the colon. Only allowed transform: numerals to words.
-10. **EACH SCENE'S PROMPT MUST REFLECT ITS OWN IMAGE.** If scene 2's image shows the avatar in a pharmacy holding a box, scene 2's prompt describes action IN THAT CONTEXT — not in the base kitchen.
+10. **GROUND THE PROMPT IN THE ATTACHED IMAGE.** Action and environment must match what is in this specific image — not a generic baseline.
 
-STRUCTURE per scene:
-[CAMERA] + [2-3 MACRO ACTIONS grounded in that scene's image] + [SUBTLE ENVIRONMENTAL DETAIL] + [DIALOGUE with colon] + [AUDIO] + (no subtitles, no text overlay)
+STRUCTURE:
+[CAMERA] + [2-3 MACRO ACTIONS grounded in the attached image] + [SUBTLE ENVIRONMENTAL DETAIL] + [DIALOGUE with colon] + [AUDIO] + (no subtitles, no text overlay)
 
 ═══════════════════════════════════════════════
-SCENES (dialogue + index of image to use)
+SCENE DIALOGUE (verbatim)
 ═══════════════════════════════════════════════
 
-${scenes
-  .map(
-    (s, i) =>
-      `Scene ${i + 1}${s.hasImage ? ` — uses Image #${i + 1}` : " — NO IMAGE (describe visually from dialogue)"}:\n"${s.dialogue}"`
-  )
-  .join("\n\n")}
+"${dialogue}"
 
 ═══════════════════════════════════════════════
 OUTPUT FORMAT
 ═══════════════════════════════════════════════
 
-Return ONLY a JSON array with one element per scene, in order. No markdown, no commentary.
-
-[
-  { "scene": 1, "dialogue": "<verbatim dialogue>", "prompt": "<full Veo prompt ending with (no subtitles, no text overlay)>" },
-  { "scene": 2, "dialogue": "...", "prompt": "..." }
-]`
+Return ONLY the prompt text — no JSON, no markdown, no commentary, no scene numbering. Just the full Veo prompt ending with (no subtitles, no text overlay).`
 
 function enforceTextBlocker(prompt: string): string {
   const trimmed = (prompt || "").trim()
@@ -132,47 +123,29 @@ async function analyzeLegacy(script: string, imageUrl: string | null) {
   return parseScenes(text)
 }
 
-async function analyzePerScene(
-  scenes: PerSceneInput[],
+async function analyzeSingleScene(
+  scene: PerSceneInput,
   fallbackImageUrl: string | null
-) {
-  // Fetch all images in parallel (unique URLs only, then map back)
-  const urls = scenes.map((s) => s.imageUrl || fallbackImageUrl || null)
-  const uniqueUrls = Array.from(new Set(urls.filter((u): u is string => !!u)))
-  const fetchedByUrl = new Map<string, string>()
-  await Promise.all(
-    uniqueUrls.map(async (u) => {
-      const b64 = await prepareImage(u)
-      if (b64) fetchedByUrl.set(u, b64)
-    })
-  )
-
-  const promptText = PER_SCENE_PROMPT(
-    scenes.map((s, i) => {
-      const u = urls[i]
-      return { dialogue: s.dialogue, hasImage: !!(u && fetchedByUrl.get(u)) }
-    })
-  )
+): Promise<string> {
+  const url = scene.imageUrl || fallbackImageUrl || null
+  const imageBase64 = url ? await prepareImage(url) : null
+  const promptText = SINGLE_SCENE_PROMPT(scene.dialogue, !!imageBase64)
 
   const claudeContent: any[] = []
   const openaiContent: any[] = []
-  // Attach images in scene order
-  for (const u of urls) {
-    const b64 = u ? fetchedByUrl.get(u) : null
-    if (b64) {
-      claudeContent.push({
-        type: "image",
-        source: {
-          type: "base64",
-          media_type: "image/jpeg",
-          data: b64,
-        },
-      })
-      openaiContent.push({
-        type: "image_url",
-        image_url: { url: `data:image/jpeg;base64,${b64}` },
-      })
-    }
+  if (imageBase64) {
+    claudeContent.push({
+      type: "image",
+      source: {
+        type: "base64",
+        media_type: "image/jpeg",
+        data: imageBase64,
+      },
+    })
+    openaiContent.push({
+      type: "image_url",
+      image_url: { url: `data:image/jpeg;base64,${imageBase64}` },
+    })
   }
   claudeContent.push({ type: "text", text: promptText })
   openaiContent.push({ type: "text", text: promptText })
@@ -180,9 +153,27 @@ async function analyzePerScene(
   const text = await callAIWithFallback({
     claudeContent,
     openaiContent,
-    maxTokens: 16000,
+    maxTokens: 2000,
   })
-  return parseScenes(text)
+  return enforceTextBlocker(stripMarkdownFences(text))
+}
+
+async function runWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length)
+  let cursor = 0
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (true) {
+      const i = cursor++
+      if (i >= items.length) return
+      results[i] = await worker(items[i], i)
+    }
+  })
+  await Promise.all(runners)
+  return results
 }
 
 function parseScenes(
@@ -219,19 +210,18 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ scenes: [] })
       }
 
-      // Batch if too many — LLM context + attachment cap
-      const batches: PerSceneInput[][] = []
-      for (let i = 0; i < scenes.length; i += MAX_SCENES_PER_BATCH) {
-        batches.push(scenes.slice(i, i + MAX_SCENES_PER_BATCH))
-      }
+      // ONE LLM call per scene — eliminates cross-image bleed when refs differ.
+      const prompts = await runWithConcurrency(
+        scenes,
+        PER_SCENE_CONCURRENCY,
+        (scene) => analyzeSingleScene(scene, fallbackImageUrl)
+      )
 
-      const out: Array<{ scene: number; dialogue: string; prompt: string }> = []
-      for (const batch of batches) {
-        const result = await analyzePerScene(batch, fallbackImageUrl)
-        for (const r of result) {
-          out.push({ ...r, scene: out.length + 1 })
-        }
-      }
+      const out = scenes.map((s, i) => ({
+        scene: i + 1,
+        dialogue: s.dialogue,
+        prompt: prompts[i],
+      }))
       return NextResponse.json({ scenes: out })
     }
 

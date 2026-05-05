@@ -5,7 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import useSWR from "swr"
-import { RiAddLine, RiImageLine, RiDeleteBinLine } from "@remixicon/react"
+import { Plus, ImageIcon, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -89,7 +89,7 @@ export default function FlowsPage() {
           </p>
         </div>
         <Button onClick={createFlow} disabled={creating}>
-          <RiAddLine className="size-4" />
+          <Plus className="size-4" />
           Nova flow
         </Button>
       </div>
@@ -106,7 +106,7 @@ export default function FlowsPage() {
         <Card className="flex-1">
           <CardContent className="flex flex-1 flex-col items-center justify-center gap-3 py-20 text-center">
             <div className="bg-muted text-muted-foreground flex size-12 items-center justify-center">
-              <RiImageLine className="size-6" />
+              <ImageIcon className="size-6" />
             </div>
             <p className="text-foreground text-sm font-medium">
               Nenhuma flow ainda
@@ -122,7 +122,7 @@ export default function FlowsPage() {
               onClick={createFlow}
               disabled={creating}
             >
-              <RiAddLine className="size-4" />
+              <Plus className="size-4" />
               Criar flow
             </Button>
           </CardContent>
@@ -148,7 +148,7 @@ export default function FlowsPage() {
                   />
                 ) : (
                   <div className="text-muted-foreground flex h-full w-full items-center justify-center">
-                    <RiImageLine className="size-6" />
+                    <ImageIcon className="size-6" />
                   </div>
                 )}
               </Link>
@@ -171,7 +171,7 @@ export default function FlowsPage() {
                   onClick={() => setPendingDelete(f.id)}
                   aria-label="Remover flow"
                 >
-                  <RiDeleteBinLine className="size-3.5" />
+                  <Trash2 className="size-3.5" />
                 </Button>
               </div>
             </div>

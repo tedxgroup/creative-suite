@@ -3,14 +3,14 @@
 import * as React from "react"
 import { Handle, Position, type NodeProps } from "@xyflow/react"
 import {
-  RiAddLine,
-  RiDeleteBinLine,
-  RiImageAddLine,
-  RiImageCircleAiLine,
-  RiLoader4Line,
-  RiPlayFill,
-  RiSubtractLine,
-} from "@remixicon/react"
+  Plus,
+  Trash2,
+  ImagePlus,
+  Sparkles,
+  Loader2,
+  Play,
+  Minus,
+} from "lucide-react"
 import { toast } from "sonner"
 import {
   Select,
@@ -151,7 +151,7 @@ export function GenerateNode(props: NodeProps<FlowNode>) {
 
       {/* Label */}
       <div className="flex items-center gap-1.5 px-1">
-        <RiImageCircleAiLine className="text-muted-foreground size-3" />
+        <Sparkles className="text-muted-foreground size-3" />
         <span className="text-muted-foreground text-xs font-medium">
           Gerar imagem #{index}
         </span>
@@ -160,7 +160,7 @@ export function GenerateNode(props: NodeProps<FlowNode>) {
           className="text-muted-foreground hover:text-destructive ml-auto opacity-0 transition-opacity group-hover/node:opacity-100"
           aria-label="Remover nó"
         >
-          <RiDeleteBinLine className="size-3" />
+          <Trash2 className="size-3" />
         </button>
       </div>
 
@@ -186,7 +186,7 @@ export function GenerateNode(props: NodeProps<FlowNode>) {
               className="text-muted-foreground hover:bg-muted hover:text-foreground flex size-6 items-center justify-center disabled:opacity-40"
               aria-label="Menos cópias"
             >
-              <RiSubtractLine className="size-3" />
+              <Minus className="size-3" />
             </button>
             <span className="text-foreground px-1.5 font-mono text-xs">
               x{data.copies}
@@ -197,7 +197,7 @@ export function GenerateNode(props: NodeProps<FlowNode>) {
               className="text-muted-foreground hover:bg-muted hover:text-foreground flex size-6 items-center justify-center disabled:opacity-40"
               aria-label="Mais cópias"
             >
-              <RiAddLine className="size-3" />
+              <Plus className="size-3" />
             </button>
           </div>
 
@@ -244,9 +244,9 @@ export function GenerateNode(props: NodeProps<FlowNode>) {
             aria-label="Gerar imagem"
           >
             {loading ? (
-              <RiLoader4Line className="size-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" />
             ) : (
-              <RiPlayFill className="size-4" />
+              <Play className="size-4" />
             )}
           </button>
         </div>
@@ -265,7 +265,7 @@ export function GenerateNode(props: NodeProps<FlowNode>) {
         aria-label="Adicionar referência"
         title="Adicionar referência"
       >
-        <RiImageAddLine className="size-4" />
+        <ImagePlus className="size-4" />
       </button>
     </div>
   )

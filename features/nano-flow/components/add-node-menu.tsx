@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useReactFlow } from "@xyflow/react"
-import { RiImageCircleAiLine } from "@remixicon/react"
+import { Sparkles } from "lucide-react"
 import {
   ContextMenu,
   ContextMenuContent,
@@ -38,7 +38,7 @@ export function CanvasContextMenu({ children }: CanvasContextMenuProps) {
       </ContextMenuTrigger>
       <ContextMenuContent className="w-44">
         <ContextMenuItem onSelect={() => addGenerateNode({ ...lastPos.current })}>
-          <RiImageCircleAiLine className="size-3.5" />
+          <Sparkles className="size-3.5" />
           Novo gerador
         </ContextMenuItem>
       </ContextMenuContent>

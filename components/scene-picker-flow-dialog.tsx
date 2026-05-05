@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { toast } from "sonner"
-import { RiCheckLine, RiLoader4Line } from "@remixicon/react"
+import { Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -73,7 +73,7 @@ export function ScenePickerFlowDialog({
           {loading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center">
               <div className="flex items-center gap-2 text-muted-foreground text-xs">
-                <RiLoader4Line className="size-4 animate-spin" />
+                <Loader2 className="size-4 animate-spin" />
                 Carregando flow do projeto...
               </div>
             </div>
@@ -120,7 +120,7 @@ function SelectedImageHint({
       className="ml-auto mr-8"
       onClick={() => onPick(selectedImageUrl)}
     >
-      <RiCheckLine className="size-3.5" />
+      <Check className="size-3.5" />
       Definir como padrão
     </Button>
   )

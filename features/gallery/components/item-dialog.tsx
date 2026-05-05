@@ -4,11 +4,11 @@ import * as React from "react"
 import Image from "next/image"
 import useSWR from "swr"
 import {
-  RiCloseLine,
-  RiDeleteBinLine,
-  RiDownloadLine,
-  RiFileCopyLine,
-} from "@remixicon/react"
+  X,
+  Trash2,
+  Download,
+  Copy,
+} from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -240,7 +240,7 @@ export function ItemDialog({
                   className="h-7 text-xs"
                 >
                   <a href={item.url} download target="_blank" rel="noopener">
-                    <RiDownloadLine className="size-3" />
+                    <Download className="size-3" />
                     baixar
                   </a>
                 </Button>
@@ -253,7 +253,7 @@ export function ItemDialog({
                     toast.success("URL copiada")
                   }}
                 >
-                  <RiFileCopyLine className="size-3" />
+                  <Copy className="size-3" />
                   copiar url
                 </Button>
                 <Button
@@ -263,7 +263,7 @@ export function ItemDialog({
                   onClick={handleDelete}
                   disabled={deleting}
                 >
-                  <RiDeleteBinLine className="size-3" />
+                  <Trash2 className="size-3" />
                   remover
                 </Button>
               </div>

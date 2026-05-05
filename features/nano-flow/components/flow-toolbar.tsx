@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useReactFlow } from "@xyflow/react"
-import { RiFocus3Line, RiZoomInLine, RiZoomOutLine } from "@remixicon/react"
+import { Focus, ZoomIn, ZoomOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useFlowStore } from "../store"
 
@@ -43,7 +43,7 @@ export function FlowToolbar() {
         onClick={() => rf.zoomIn()}
         aria-label="Zoom in"
       >
-        <RiZoomInLine className="size-3.5" />
+        <ZoomIn className="size-3.5" />
       </Button>
       <Button
         variant="ghost"
@@ -52,7 +52,7 @@ export function FlowToolbar() {
         onClick={() => rf.zoomOut()}
         aria-label="Zoom out"
       >
-        <RiZoomOutLine className="size-3.5" />
+        <ZoomOut className="size-3.5" />
       </Button>
       <Button
         variant="ghost"
@@ -61,7 +61,7 @@ export function FlowToolbar() {
         onClick={() => rf.fitView({ padding: 0.2, duration: 300 })}
         aria-label="Fit view"
       >
-        <RiFocus3Line className="size-3.5" />
+        <Focus className="size-3.5" />
       </Button>
     </div>
   )

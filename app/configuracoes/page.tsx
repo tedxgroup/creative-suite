@@ -1,4 +1,4 @@
-import { RiSettings3Line } from "@remixicon/react"
+import { Settings } from "lucide-react"
 import { PlaceholderView } from "@/components/placeholder-view"
 
 export default function ConfiguracoesPage() {
@@ -6,7 +6,7 @@ export default function ConfiguracoesPage() {
     <PlaceholderView
       breadcrumb="/configuracoes"
       title="Configurações"
-      icon={RiSettings3Line}
+      icon={Settings}
       description="API keys, preferências de geração e tema — em breve."
     />
   )

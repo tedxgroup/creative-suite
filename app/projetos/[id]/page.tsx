@@ -5,15 +5,15 @@ import { useParams, useRouter } from "next/navigation"
 import useSWR, { mutate } from "swr"
 import { toast } from "sonner"
 import {
-  RiArrowLeftLine,
-  RiAddLine,
-  RiListUnordered,
-  RiPlayFill,
-  RiRefreshLine,
-  RiDownloadLine,
-  RiAlertLine,
-  RiLoader4Line,
-} from "@remixicon/react"
+  ArrowLeft,
+  Plus,
+  List,
+  Play,
+  RefreshCw,
+  Download,
+  TriangleAlert,
+  Loader2,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -263,12 +263,12 @@ export default function ProjectDetailPage() {
   if (!project) {
     return (
       <div className="mx-auto flex w-full max-w-[1440px] flex-col items-center justify-center gap-3 px-6 py-20 text-center sm:px-10 lg:px-16">
-        <RiAlertLine className="text-muted-foreground size-8" />
+        <TriangleAlert className="text-muted-foreground size-8" />
         <p className="text-foreground text-sm font-medium">
           Projeto não encontrado
         </p>
         <Button variant="secondary" onClick={() => router.push("/")}>
-          <RiArrowLeftLine className="size-4" />
+          <ArrowLeft className="size-4" />
           Voltar para projetos
         </Button>
       </div>
@@ -288,7 +288,7 @@ export default function ProjectDetailPage() {
             onClick={() => router.push("/")}
             className="text-muted-foreground hover:text-foreground -ml-2"
           >
-            <RiArrowLeftLine className="size-4" />
+            <ArrowLeft className="size-4" />
             Voltar
           </Button>
           <p className="text-muted-foreground truncate font-mono text-[12px] tracking-tight">
@@ -302,7 +302,7 @@ export default function ProjectDetailPage() {
               variant="outline"
               className="h-7 gap-1.5 rounded-md border-emerald-500/30 bg-emerald-500/10 px-2 font-mono text-[11px] text-emerald-600 dark:text-emerald-400"
             >
-              <RiLoader4Line className="size-3 animate-spin" />
+              <Loader2 className="size-3 animate-spin" />
               Monitorando
             </Badge>
           )}
@@ -337,7 +337,7 @@ export default function ProjectDetailPage() {
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-1.5">
         <Button size="sm" variant="secondary" onClick={() => setAddOpen(true)}>
-          <RiAddLine className="size-3.5" />
+          <Plus className="size-3.5" />
           Clip
         </Button>
         <Button
@@ -345,7 +345,7 @@ export default function ProjectDetailPage() {
           variant="secondary"
           onClick={() => setBulkOpen(true)}
         >
-          <RiListUnordered className="size-3.5" />
+          <List className="size-3.5" />
           Cenas
         </Button>
         <Separator orientation="vertical" className="mx-1 h-5" />
@@ -354,7 +354,7 @@ export default function ProjectDetailPage() {
           onClick={handleGenerateAll}
           disabled={!needsGeneration}
         >
-          <RiPlayFill className="size-3.5" />
+          <Play className="size-3.5" />
           Gerar todos
         </Button>
         <Button
@@ -363,7 +363,7 @@ export default function ProjectDetailPage() {
           onClick={handleCheckStatus}
           className="text-muted-foreground"
         >
-          <RiRefreshLine className="size-3.5" />
+          <RefreshCw className="size-3.5" />
           Atualizar
         </Button>
         <Button
@@ -372,7 +372,7 @@ export default function ProjectDetailPage() {
           onClick={handleDownloadAll}
           className="text-muted-foreground"
         >
-          <RiDownloadLine className="size-3.5" />
+          <Download className="size-3.5" />
           Baixar todos
         </Button>
 
@@ -411,7 +411,7 @@ export default function ProjectDetailPage() {
             className="mt-2"
             onClick={() => setAddOpen(true)}
           >
-            <RiAddLine className="size-4" />
+            <Plus className="size-4" />
             Adicionar clip
           </Button>
         </div>

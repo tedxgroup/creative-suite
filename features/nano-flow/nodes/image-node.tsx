@@ -4,13 +4,13 @@ import * as React from "react"
 import Image from "next/image"
 import { Handle, Position, type NodeProps } from "@xyflow/react"
 import {
-  RiBookmarkLine,
-  RiDeleteBinLine,
-  RiDownloadLine,
-  RiFileCopyLine,
-  RiImage2Line,
-  RiShuffleLine,
-} from "@remixicon/react"
+  Bookmark,
+  Trash2,
+  Download,
+  Copy,
+  ImageIcon,
+  Shuffle,
+} from "lucide-react"
 import { toast } from "sonner"
 import {
   ContextMenu,
@@ -88,7 +88,7 @@ export function ImageNode(props: NodeProps<FlowNode>) {
           />
 
           <div className="flex items-center gap-1.5 px-1">
-            <RiImage2Line className="text-muted-foreground size-3" />
+            <ImageIcon className="text-muted-foreground size-3" />
             <span className="text-muted-foreground text-xs font-medium">
               Imagem #{index}
             </span>
@@ -97,7 +97,7 @@ export function ImageNode(props: NodeProps<FlowNode>) {
               className="text-muted-foreground hover:text-destructive ml-auto opacity-0 transition-opacity group-hover/node:opacity-100"
               aria-label="Remover imagem"
             >
-              <RiDeleteBinLine className="size-3" />
+              <Trash2 className="size-3" />
             </button>
           </div>
 
@@ -125,7 +125,7 @@ export function ImageNode(props: NodeProps<FlowNode>) {
                 className="bg-background/90 text-foreground hover:bg-background pointer-events-auto flex size-7 items-center justify-center rounded-md backdrop-blur ring-1 ring-foreground/10"
                 aria-label="Baixar"
               >
-                <RiDownloadLine className="size-3.5" />
+                <Download className="size-3.5" />
               </a>
               <button
                 onClick={() => {
@@ -135,7 +135,7 @@ export function ImageNode(props: NodeProps<FlowNode>) {
                 className="bg-background/90 text-foreground hover:bg-background pointer-events-auto flex size-7 items-center justify-center rounded-md backdrop-blur ring-1 ring-foreground/10"
                 aria-label="Copiar URL"
               >
-                <RiFileCopyLine className="size-3.5" />
+                <Copy className="size-3.5" />
               </button>
               <button
                 onClick={() => {
@@ -146,7 +146,7 @@ export function ImageNode(props: NodeProps<FlowNode>) {
                 aria-label="Ramificar"
                 title="Ramificar"
               >
-                <RiShuffleLine className="size-3.5" />
+                <Shuffle className="size-3.5" />
               </button>
             </div>
           </div>
@@ -154,7 +154,7 @@ export function ImageNode(props: NodeProps<FlowNode>) {
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         <ContextMenuItem onSelect={saveToGallery}>
-          <RiBookmarkLine className="size-3.5" />
+          <Bookmark className="size-3.5" />
           Salvar na galeria
         </ContextMenuItem>
         <ContextMenuItem
@@ -163,7 +163,7 @@ export function ImageNode(props: NodeProps<FlowNode>) {
             if (newId) focusNodes([id, newId])
           }}
         >
-          <RiShuffleLine className="size-3.5" />
+          <Shuffle className="size-3.5" />
           Ramificar
         </ContextMenuItem>
         <ContextMenuItem
@@ -172,7 +172,7 @@ export function ImageNode(props: NodeProps<FlowNode>) {
             toast.success("URL copiada")
           }}
         >
-          <RiFileCopyLine className="size-3.5" />
+          <Copy className="size-3.5" />
           Copiar URL
         </ContextMenuItem>
         <ContextMenuSeparator />
@@ -180,7 +180,7 @@ export function ImageNode(props: NodeProps<FlowNode>) {
           onSelect={() => deleteNode(id)}
           className="text-destructive focus:text-destructive"
         >
-          <RiDeleteBinLine className="size-3.5" />
+          <Trash2 className="size-3.5" />
           Remover
         </ContextMenuItem>
       </ContextMenuContent>

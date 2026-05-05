@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { RiImageLine } from "@remixicon/react"
+import { ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { VideoProject } from "@/lib/types"
 
@@ -48,7 +48,7 @@ export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
     >
       <div className="relative">
         {/* Thumbnail (clean, no overlays) */}
-        <div className="bg-muted ring-foreground/10 group-hover:ring-foreground/30 relative aspect-video w-full overflow-hidden ring-1 transition-all">
+        <div className="bg-muted ring-foreground/10 group-hover:ring-foreground/30 relative aspect-video w-full overflow-hidden rounded-lg ring-1 transition-all">
           {thumbUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -60,7 +60,7 @@ export function ProjectCard({ project, index = 0 }: ProjectCardProps) {
             />
           ) : (
             <div className="text-muted-foreground/30 flex size-full items-center justify-center">
-              <RiImageLine className="size-7" />
+              <ImageIcon className="size-7" />
             </div>
           )}
         </div>

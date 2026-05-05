@@ -4,18 +4,18 @@ import * as React from "react"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import {
-  RiDraggable,
-  RiPlayCircleFill,
-  RiImageLine,
-  RiFlag2Line,
-  RiFileCopyLine,
-  RiDeleteBinLine,
-  RiDownloadLine,
-  RiRefreshLine,
-  RiPriceTag3Line,
-  RiCloseLine,
-  RiCheckLine,
-} from "@remixicon/react"
+  GripVertical,
+  CirclePlay,
+  ImageIcon,
+  Flag,
+  Copy,
+  Trash2,
+  Download,
+  RefreshCw,
+  Tag,
+  X,
+  Check,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
@@ -126,7 +126,7 @@ export function ClipRow({
                 className="flex size-5 cursor-grab touch-none select-none items-center justify-center outline-none active:cursor-grabbing focus-visible:ring-1 focus-visible:ring-ring"
                 aria-label="Arrastar para reordenar"
               >
-                <RiDraggable className="size-3.5" />
+                <GripVertical className="size-3.5" />
               </span>
               <span className="font-mono text-xs w-5 text-right tabular-nums">
                 {String(clip.order).padStart(2, "0")}
@@ -149,11 +149,11 @@ export function ClipRow({
                   className="size-full object-cover"
                 />
               ) : (
-                <RiImageLine className="text-muted-foreground/40 size-4" />
+                <ImageIcon className="text-muted-foreground/40 size-4" />
               )}
               {hasVideo && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover/clip:opacity-100">
-                  <RiPlayCircleFill className="size-7 text-white drop-shadow-md" />
+                  <CirclePlay className="size-7 text-white drop-shadow-md" />
                 </div>
               )}
             </div>
@@ -225,7 +225,7 @@ export function ClipRow({
                   className="h-7"
                   onClick={() => onRetry?.(clip.id)}
                 >
-                  <RiRefreshLine className="size-3" />
+                  <RefreshCw className="size-3" />
                   Retry
                 </Button>
               )}
@@ -247,7 +247,7 @@ export function ClipRow({
                 title="Duplicar"
                 onClick={() => onDuplicate?.(clip.id)}
               >
-                <RiFileCopyLine className="size-3.5" />
+                <Copy className="size-3.5" />
               </Button>
               <Button
                 variant="ghost"
@@ -256,7 +256,7 @@ export function ClipRow({
                 title="Excluir"
                 onClick={() => onDelete?.(clip.id)}
               >
-                <RiDeleteBinLine className="size-3.5" />
+                <Trash2 className="size-3.5" />
               </Button>
             </div>
           </Card>
@@ -265,7 +265,7 @@ export function ClipRow({
         <ContextMenuContent className="w-52">
           <ContextMenuSub>
             <ContextMenuSubTrigger>
-              <RiPriceTag3Line className="mr-2 size-3.5" />
+              <Tag className="mr-2 size-3.5" />
               Tag
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-44">
@@ -284,7 +284,7 @@ export function ClipRow({
                   />
                   {CLIP_CATEGORY_LABEL[cat]}
                   {category === cat && (
-                    <RiCheckLine className="ml-auto size-3.5 text-primary" />
+                    <Check className="ml-auto size-3.5 text-primary" />
                   )}
                 </ContextMenuItem>
               ))}
@@ -295,7 +295,7 @@ export function ClipRow({
                     onSelect={() => onSetCategory?.(clip.id, null)}
                     className="text-muted-foreground"
                   >
-                    <RiCloseLine className="mr-2 size-3.5" />
+                    <X className="mr-2 size-3.5" />
                     Remover tag
                   </ContextMenuItem>
                 </>
@@ -306,7 +306,7 @@ export function ClipRow({
           <ContextMenuSeparator />
 
           <ContextMenuItem onSelect={() => onToggleTag?.(clip.id)}>
-            <RiFlag2Line
+            <Flag
               className={cn(
                 "mr-2 size-3.5",
                 clip.tagged && "text-amber-500"
@@ -320,7 +320,7 @@ export function ClipRow({
               onSelect={() => onDownload?.(clip.id)}
               className="text-emerald-700 dark:text-emerald-400"
             >
-              <RiDownloadLine className="mr-2 size-3.5" />
+              <Download className="mr-2 size-3.5" />
               Baixar vídeo
             </ContextMenuItem>
           )}

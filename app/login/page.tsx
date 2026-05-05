@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { RiLockLine } from "@remixicon/react"
+import { Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -99,7 +99,7 @@ function LoginForm() {
             onClick={signIn}
             disabled={loading || !email || !password}
           >
-            <RiLockLine className="size-4" />
+            <Lock className="size-4" />
             {loading ? "Entrando..." : "Entrar"}
           </Button>
         </div>

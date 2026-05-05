@@ -1,4 +1,4 @@
-import { RiVoiceprintLine } from "@remixicon/react"
+import { AudioLines } from "lucide-react"
 import { PlaceholderView } from "@/components/placeholder-view"
 
 export default function VozesPage() {
@@ -6,7 +6,7 @@ export default function VozesPage() {
     <PlaceholderView
       breadcrumb="/vozes"
       title="Vozes"
-      icon={RiVoiceprintLine}
+      icon={AudioLines}
       description="Geração de TTS, voice changer e clonagem de vozes via ElevenLabs."
     />
   )

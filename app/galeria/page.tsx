@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import useSWR from "swr"
-import { RiFolderImageLine, RiSearchLine } from "@remixicon/react"
+import { Images, Search } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -93,7 +93,7 @@ export default function GaleriaPage() {
               </TabsList>
             </Tabs>
             <div className="relative ml-auto">
-              <RiSearchLine className="text-muted-foreground pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2" />
+              <Search className="text-muted-foreground pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -113,7 +113,7 @@ export default function GaleriaPage() {
             <Card className="flex-1">
               <CardContent className="flex flex-1 flex-col items-center justify-center gap-3 py-20 text-center">
                 <div className="bg-muted text-muted-foreground flex size-12 items-center justify-center">
-                  <RiFolderImageLine className="size-6" />
+                  <Images className="size-6" />
                 </div>
                 <p className="text-foreground text-sm font-medium">
                   Galeria vazia

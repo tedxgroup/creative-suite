@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { RiArrowLeftLine } from "@remixicon/react"
+import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FlowCanvas } from "@/features/nano-flow/canvas"
 import { FlowNameHeader } from "@/features/nano-flow/components/flow-name-header"
@@ -27,7 +27,7 @@ export default async function FlowCanvasPage({
           className="text-muted-foreground hover:text-foreground size-7"
         >
           <Link href="/imagens" aria-label="Voltar">
-            <RiArrowLeftLine className="size-4" />
+            <ArrowLeft className="size-4" />
           </Link>
         </Button>
         <div className="min-w-0">

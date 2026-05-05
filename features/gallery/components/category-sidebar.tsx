@@ -2,11 +2,11 @@
 
 import * as React from "react"
 import {
-  RiAddLine,
-  RiDeleteBinLine,
-  RiEditLine,
-  RiFolder3Line,
-} from "@remixicon/react"
+  Plus,
+  Trash2,
+  Pencil,
+  Folder,
+} from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -76,7 +76,7 @@ export function CategorySidebar({
           aria-label="Nova categoria"
           title="Nova categoria"
         >
-          <RiAddLine className="size-3.5" />
+          <Plus className="size-3.5" />
         </Button>
       </div>
 
@@ -88,7 +88,7 @@ export function CategorySidebar({
             activeId === null && "bg-muted text-foreground font-medium"
           )}
         >
-          <RiFolder3Line className="text-muted-foreground size-3.5" />
+          <Folder className="text-muted-foreground size-3.5" />
           Todas
         </button>
         {categories.map((cat) => (
@@ -119,7 +119,7 @@ export function CategorySidebar({
                 onClick={() => openEdit(cat)}
                 aria-label="Editar"
               >
-                <RiEditLine className="size-3" />
+                <Pencil className="size-3" />
               </Button>
               <Button
                 variant="ghost"
@@ -128,7 +128,7 @@ export function CategorySidebar({
                 onClick={() => handleDelete(cat)}
                 aria-label="Remover"
               >
-                <RiDeleteBinLine className="size-3" />
+                <Trash2 className="size-3" />
               </Button>
             </div>
           </div>

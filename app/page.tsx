@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import useSWR from "swr"
-import { RiAddLine, RiFolderOpenLine } from "@remixicon/react"
+import { Plus, FolderOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -31,7 +31,7 @@ export default function ProjectsPage() {
           </h1>
         </div>
         <Button onClick={() => setDialogOpen(true)}>
-          <RiAddLine className="size-4" />
+          <Plus className="size-4" />
           Novo projeto
         </Button>
       </div>
@@ -50,7 +50,7 @@ export default function ProjectsPage() {
         <Card className="flex-1">
           <CardContent className="flex flex-1 flex-col items-center justify-center gap-3 py-20 text-center">
             <div className="bg-muted text-muted-foreground flex size-12 items-center justify-center">
-              <RiFolderOpenLine className="size-6" />
+              <FolderOpen className="size-6" />
             </div>
             <p className="text-foreground text-sm font-medium">
               Nenhum projeto ainda
@@ -65,7 +65,7 @@ export default function ProjectsPage() {
               className="mt-2"
               onClick={() => setDialogOpen(true)}
             >
-              <RiAddLine className="size-4" />
+              <Plus className="size-4" />
               Criar projeto
             </Button>
           </CardContent>

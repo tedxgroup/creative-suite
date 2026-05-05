@@ -3,13 +3,13 @@
 import * as React from "react"
 import { toast } from "sonner"
 import {
-  RiUploadCloud2Line,
-  RiVoiceprintLine,
-  RiCheckLine,
-  RiSparkling2Line,
-  RiLoader4Line,
-  RiArrowLeftLine,
-} from "@remixicon/react"
+  UploadCloud,
+  AudioLines,
+  Check,
+  Sparkles,
+  Loader2,
+  ArrowLeft,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -186,7 +186,7 @@ export function AddClipDialog({
               <div className="flex flex-col items-center justify-center gap-5 py-16 text-center">
                 <div className="relative">
                   <div className="border-primary/20 border-t-primary size-12 animate-spin rounded-full border-2" />
-                  <RiSparkling2Line className="text-primary absolute inset-0 m-auto size-5 animate-pulse" />
+                  <Sparkles className="text-primary absolute inset-0 m-auto size-5 animate-pulse" />
                 </div>
                 <div className="space-y-1.5">
                   <p className="text-foreground text-sm font-medium">
@@ -198,7 +198,7 @@ export function AddClipDialog({
                   </p>
                 </div>
                 <div className="text-muted-foreground flex items-center gap-2 font-mono text-[11px]">
-                  <RiLoader4Line className="size-3 animate-spin" />
+                  <Loader2 className="size-3 animate-spin" />
                   <span>Isso pode levar 15-30 segundos</span>
                 </div>
               </div>
@@ -224,7 +224,7 @@ export function AddClipDialog({
                       className="text-muted-foreground -mr-2 h-7"
                       onClick={discardGenerated}
                     >
-                      <RiArrowLeftLine className="size-3.5" />
+                      <ArrowLeft className="size-3.5" />
                       Voltar
                     </Button>
                   </div>
@@ -276,7 +276,7 @@ export function AddClipDialog({
                       disabled={!dialogue.trim()}
                       className="flex-shrink-0"
                     >
-                      <RiSparkling2Line className="size-3.5" />
+                      <Sparkles className="size-3.5" />
                       Analisar com IA
                     </Button>
                   </div>
@@ -301,7 +301,7 @@ export function AddClipDialog({
                 <UploadArea
                   url={audioUrl}
                   filename={audioName}
-                  icon={<RiVoiceprintLine className="size-4" />}
+                  icon={<AudioLines className="size-4" />}
                   accept="audio/*"
                   label="Enviar .mp3 ou .wav"
                   onFile={uploadAudio}
@@ -409,7 +409,7 @@ function UploadArea({
         />
       ) : url ? (
         <div className="animate-in fade-in zoom-in-95 flex flex-col items-center gap-1.5 duration-300">
-          <RiCheckLine className="text-primary size-4" />
+          <Check className="text-primary size-4" />
           <p className="text-foreground truncate text-xs">
             {filename || "Enviado"}
           </p>
@@ -417,7 +417,7 @@ function UploadArea({
       ) : (
         <>
           {icon || (
-            <RiUploadCloud2Line className="text-muted-foreground/60 size-5" />
+            <UploadCloud className="text-muted-foreground/60 size-5" />
           )}
           <p className="text-muted-foreground text-xs">{label}</p>
         </>

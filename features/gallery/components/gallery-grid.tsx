@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { RiImageLine, RiUserSmileLine } from "@remixicon/react"
+import { ImageIcon, Smile } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { GalleryItemSummary } from "../types"
 
@@ -41,7 +41,7 @@ function GalleryCard({
   onOpen: (item: GalleryItemSummary) => void
 }) {
   const isRef = item.kind === "reference"
-  const Icon = isRef ? RiUserSmileLine : RiImageLine
+  const Icon = isRef ? Smile : ImageIcon
 
   return (
     <button

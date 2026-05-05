@@ -3,11 +3,10 @@ import { makeKey, uploadToStorage } from "@/lib/storage-bucket"
 import { createGeneratedImage } from "@/features/nano-flow/lib/db"
 import { saveItem as saveGalleryItem } from "@/features/gallery/lib/db"
 import {
-  fetchImageAsBase64,
   generateWithNanoBananaPro,
   NANO_BANANA_PRO_MODEL,
-} from "@/features/nano-flow/lib/gemini"
-import { refinePrompt } from "@/features/nano-flow/lib/refine"
+} from "@/features/nano-flow/lib/nano-banana"
+import { buildNanoBananaPrompt } from "@/features/nano-flow/lib/prompt"
 import { generateRequestSchema } from "@/features/nano-flow/lib/validators"
 import type { ReferenceTag } from "@/features/nano-flow/types"
 
@@ -21,29 +20,21 @@ export async function POST(req: NextRequest) {
 
     const refs = parsed.references.slice(0, 14)
 
-    // Fetch references once (reused by refine + generation)
-    const fetched = await Promise.all(refs.map((r) => fetchImageAsBase64(r.imageUrl)))
-
-    // Refine prompt (silent, server-side) — Gemini Flash sees the images too
-    const refined = await refinePrompt({
+    const finalPrompt = buildNanoBananaPrompt({
       basePrompt: parsed.prompt,
-      references: refs.map((r, i) => ({
+      references: refs.map((r) => ({
         tag: r.tag as ReferenceTag,
         label: r.label,
-        data: fetched[i].data,
-        mimeType: fetched[i].mimeType,
         isContinuityFrame: r.isContinuityFrame,
       })),
-      aspect: parsed.aspect,
-      resolution: parsed.resolution,
     })
 
     // Run N generations in parallel
     const results = await Promise.allSettled(
       Array.from({ length: parsed.copies }).map(() =>
         generateWithNanoBananaPro({
-          prompt: refined,
-          referenceImages: fetched,
+          prompt: finalPrompt,
+          referenceImageUrls: refs.map((r) => r.imageUrl),
           aspect: parsed.aspect,
           resolution: parsed.resolution,
         })
@@ -78,7 +69,7 @@ export async function POST(req: NextRequest) {
           flowId: parsed.flowId,
           nodeId: parsed.nodeId,
           url,
-          prompt: refined,
+          prompt: finalPrompt,
           refsUsed: refs.map((rr) => ({
             url: rr.imageUrl,
             tag: rr.tag as ReferenceTag,
@@ -105,7 +96,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       images: persisted,
-      refined,
+      refined: finalPrompt,
       partial: failures.length > 0 ? failures.length : undefined,
     })
   } catch (err: any) {
